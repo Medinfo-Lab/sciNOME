@@ -1,0 +1,17 @@
+Package: sciNOME
+Type: Package
+Title: Unifying DNA Methylation, Chromatin Accessibility, and Transcriptome Profiling in Single-Cell Multi-Omics via Region-Centric Integration
+Version: 0.1.4
+Author: Medinfo-Lad
+Maintainer: The package maintainer <yourself@somewhere.net>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    dplyr (>= 1.1.0),
+    GenomicRanges (>= 1.50.0),
+    reticulate (>= 1.39.0),
+    utils (>= 4.1.8)
+RoxygenNote: 7.3.2
