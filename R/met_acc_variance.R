@@ -20,7 +20,7 @@ Chr_region_process <- function(file_tmp,method){
     chr_data <- file_tmp
     chr_data_paste <- sprintf("%s:%d-%d",chr_data$chr,chr_data$start,chr_data$end)
     chr_data_paste_frame <- as.data.frame(chr_data_paste)
-    colnames(chr_data_paste_frame) <- "chr"
+    colnames(chr_data_paste_frame) <- "chrdata"
     return(chr_data_paste_frame)
   }
 }
