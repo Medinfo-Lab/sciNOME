@@ -44,7 +44,7 @@ library(sciNOME)
 library(dplyr)
 library(data.table)
 
-#First provide a coverage data, bed data and chromosome data
+#First provide a coverage data, bed data, chromosome data and group data
 merge_coverage <- list.files(
   coverage_path,
   full.names = TRUE,
@@ -52,7 +52,7 @@ merge_coverage <- list.files(
 )
 
 load("data/list.RData")
-CPU_cores <- 10
+CPU_cores <- 20
 
 #site methlevel
 for (i in 1:length(merge_coverage)) {
@@ -67,7 +67,7 @@ for (i in 1:length(merge_coverage)) {
   b <- data.frame()
   # Parallel processing of each chromosome using mclapply
   merge_list <- mclapply(chromosome_data, function(chr_tmp) {
-    merge_chr <- Cov_to_data(merge_coverage[i], cov_data, chr_tmp, bed_data, suffixname, "methlevel")
+    merge_chr <- Coverage_to_data(merge_coverage[i], cov_data, chr_tmp, bed_data, suffixname, "methlevel")
     merge_name <- paste0("merge_", chr_tmp)
     return(list(merge_name = merge_chr))
   }, mc.cores = CPU_cores)  # Number of CPU cores used
@@ -92,7 +92,7 @@ for (i in 1:length(merge_coverage)) {
   b <- data.frame()
   # Parallel processing of each chromosome using mclapply
   merge_list <- mclapply(chromosome_data, function(chr_tmp) {
-    merge_chr <- Cov_to_data(merge_coverage[i], cov_data, chr_tmp, bed_data, suffixname, "meth")
+    merge_chr <- Coverage_to_data(merge_coverage[i], cov_data, chr_tmp, bed_data, suffixname, "meth")
     merge_name <- paste0("merge_", chr_tmp)
     return(list(merge_name = merge_chr))
   }, mc.cores = CPU_cores)  # Number of CPU cores used
@@ -107,4 +107,17 @@ for (i in 1:length(merge_coverage)) {
 bed_data_paste_methlevel_methleveldata <- Read_file_meth_colname(bed_data_paste_methlevel,"methlevel")
 bed_data_paste_meth_methdata <- Read_file_meth_colname(bed_data_paste_meth,"meth")
 bed_data_paste_meth_UNmethdata <- Read_file_meth_colname(bed_data_paste_meth,"UNmeth")
+                             
+group_levels <- levels(factor(group$Developmental_stage))
+       
+for(i in 1:length(group_levels)){
+    group_suffix <- group_levels[i]
+    cat(group_suffix,"\n")
+    methlevel_DEG_data <- Methlevel_group_variance_analysis(bed_data_paste_methlevel_methleveldata, Group_data,
+                                                            "Developmental_stage", "methlevel", group_suffix)
+    methlevel_DEG_data <- merge(methlevel_DEG_data, list_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
+    meth_DEG_data <- Meth_group_variance_analysis(bed_data_paste_meth_methdata, bed_data_paste_meth_UNmethdata, Group_data,
+                                                       "Developmental_stage", "meth","UNmeth", group_suffix)
+    meth_DEG_data <- merge(meth_DEG_data, list_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
+}
 ```
