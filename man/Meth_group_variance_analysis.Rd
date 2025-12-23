@@ -8,8 +8,9 @@ Meth_group_variance_analysis(
   meth_data,
   UNmeth_data,
   group_data,
-  group_suff,
-  title_suff,
+  group_suff = "group",
+  meth_title_suff = "meth",
+  UNmeth_title_suff = "UNmeth",
   suff
 )
 }
@@ -22,7 +23,9 @@ Meth_group_variance_analysis(
 
 \item{group_suff}{grouping field}
 
-\item{title_suff}{meth or UNmeth grouping field}
+\item{meth_title_suff}{meth grouping field}
+
+\item{UNmeth_title_suff}{UNmeth grouping field}
 
 \item{suff}{group suffix name}
 }

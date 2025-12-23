@@ -7,8 +7,8 @@
 Methlevel_group_variance_analysis(
   methlevel_data,
   group_data,
-  group_suff,
-  methlevel_group_suff,
+  group_suff = "group",
+  methlevel_group_suff = "methlevel",
   suff
 )
 }

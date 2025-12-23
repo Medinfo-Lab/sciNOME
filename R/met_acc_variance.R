@@ -38,7 +38,8 @@ Chr_region_process <- function(file_tmp,method){
 #' @export
 #'
 #' @examples
-Methlevel_group_variance_analysis <- function(methlevel_data,group_data,group_suff,methlevel_group_suff,suff){
+Methlevel_group_variance_analysis <- function(methlevel_data,group_data,group_suff="group",
+                                              methlevel_group_suff="methlevel",suff){
   group_methlevel <- group_data %>%
     filter(.data[[group_suff]] %in% suff)
   nogroup_methlevel <- group_data %>%
@@ -62,16 +63,22 @@ Methlevel_group_variance_analysis <- function(methlevel_data,group_data,group_su
   nogroup_methlevel_data_clean_choose_rowmean <- rowMeans(nogroup_methlevel_data_clean_choose,na.rm = T)
 
 
-  DEG_data <- data.frame(chr=rowname_ids)
+  DEG_data <- data.frame(chrdata=rowname_ids)
 
   for (i in 1:length(rowname_ids)) {
-    result <- wilcox.test(group_methlevel_data_clean_choose[i,],
-                          nogroup_methlevel_data_clean_choose[i,]
-    )
-    DEG_data$p.value[i] <- result$p.value
-    DEG_data$logFC[i] <- log2(group_methlevel_data_clean_choose_rowmean[i]/nogroup_methlevel_data_clean_choose_rowmean[i])
+    # result <- wilcox.test(group_methlevel_data_clean_choose[i,],
+    #                       nogroup_methlevel_data_clean_choose[i,]
+    # )
+    # DEG_data$p.value[i] <- result$p.value
+    DEG_data$var_group[i] <- var(group_methlevel_data_clean_choose[i,],na.rm = T)
+    DEG_data$var_nogroup[i] <- var(nogroup_methlevel_data_clean_choose[i,],na.rm = T)
+    DEG_data$Diff[i] <- group_methlevel_data_clean_choose_rowmean[i]-nogroup_methlevel_data_clean_choose_rowmean[i]
+    DEG_data$Scores[i] <- DEG_data$Diff[i]/(1+sqrt((var(GSE121690_CpG_genebody_methlevel_preBII_clean_choose[i,],na.rm = T))^2+(var(GSE121690_CpG_genebody_methlevel_nopreBII_clean_choose[i,],na.rm = T))^2))
+    DEG_data$FC[i] <- group_methlevel_data_clean_choose_rowmean[i]/nogroup_methlevel_data_clean_choose_rowmean[i]
+    DEG_data$logFC[i] <- log2((group_methlevel_data_clean_choose_rowmean[i]+1)/
+                                (nogroup_methlevel_data_clean_choose_rowmean[i]+1))
   }
-  DEG_data$adj_p.value_fdr <- p.adjust(DEG_data$p.value, method = "fdr")
+  # DEG_data$adj_p.value_fdr <- p.adjust(DEG_data$p.value, method = "fdr")
   return(DEG_data)
 }
 
@@ -82,26 +89,29 @@ Methlevel_group_variance_analysis <- function(methlevel_data,group_data,group_su
 #' @param UNmeth_data DNA methylation or chromatin accessibility UNmeth data
 #' @param group_data DNA methylation or chromatin accessibility group data
 #' @param group_suff grouping field
-#' @param title_suff meth or UNmeth grouping field
+#' @param meth_title_suff meth grouping field
+#' @param UNmeth_title_suff UNmeth grouping field
 #' @param suff group suffix name
 #'
 #' @return meth differential data
 #' @export
 #'
 #' @examples
-Meth_group_variance_analysis <- function(meth_data,UNmeth_data,group_data,group_suff,title_suff,suff){
+Meth_group_variance_analysis <- function(meth_data,UNmeth_data,
+                                         group_data,group_suff="group",
+                                         meth_title_suff="meth",UNmeth_title_suff="UNmeth",
+                                         suff){
   group_sample <- group_data %>%
     filter(.data[[group_suff]] %in% suff)
   no_group_sample <- group_data %>%
     filter(!.data[[group_suff]] %in% suff)
 
 
-  meth_data_meth_target <- meth_data[,group_sample[[title_suff]]]
-  UNmeth_data_UNmeth_target <- UNmeth_data[,group_sample[[title_suff]]]
+  meth_data_meth_target <- meth_data[,group_sample[[meth_title_suff]]]
+  UNmeth_data_UNmeth_target <- UNmeth_data[,group_sample[[UNmeth_title_suff]]]
 
-  meth_data_meth_control <- meth_data[,no_group_sample[[title_suff]]]
-  UNmeth_data_UNmeth_control <- UNmeth_data[,no_group_sample[[title_suff]]]
-
+  meth_data_meth_control <- meth_data[,no_group_sample[[meth_title_suff]]]
+  UNmeth_data_UNmeth_control <- UNmeth_data[,no_group_sample[[UNmeth_title_suff]]]
 
   meth_data_meth_target_sum <- rowSums(meth_data_meth_target)
   meth_data_UNmeth_target_sum <- rowSums(UNmeth_data_UNmeth_target)
@@ -109,8 +119,7 @@ Meth_group_variance_analysis <- function(meth_data,UNmeth_data,group_data,group_
   UNmeth_data_meth_control_sum <- rowSums(meth_data_meth_control)
   UNmeth_data_UNmeth_control_sum <- rowSums(UNmeth_data_UNmeth_control)
 
-
-  fisher_data <- data.frame(chr=rownames(meth_data_meth_target))
+  fisher_data <- data.frame(chrdata=rownames(meth_data_meth_target))
 
   for (i in 1:nrow(fisher_data)) {
     x = matrix(c(meth_data_meth_target_sum[i],
@@ -121,7 +130,6 @@ Meth_group_variance_analysis <- function(meth_data,UNmeth_data,group_data,group_
     fisher_data[i,1] <- p$p.value
   }
   fisher_data$adj_p.value_fdr <- p.adjust(fisher_data$p.value,method = "fdr")
-  fisher_data$log10_adj_p.value_fdr <- -log10(fisher_data$adj_p.value_fdr)
   return(fisher_data)
 }
 

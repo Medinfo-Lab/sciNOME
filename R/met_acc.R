@@ -20,59 +20,12 @@ Read_file_meth_colname <- function(file_tmp,string_data){
   return(file_data_meth)
 }
 
-#' Data quality control
-#'
-#' @param file_tmp DNA methylation or chromatin accessibility matrix
-#' @param flag choose to perform quality control by column or row
-#'
-#' @return data after quality control
-#' @export
-#'
-#' @examples
-QC_meth_unmeth <- function(file_tmp,flag="col"){
-  file_data <- file_tmp
 
-  file_meth_name <- grep("\\.meth$", colnames(file_data), value = TRUE)
-  file_unmeth_name <- grep("\\.UNmeth$", colnames(file_data), value = TRUE)
-
-  file_meth_data <- file_data[,file_meth_name]
-  file_unmeth_data <- file_data[,file_unmeth_name]
-
-  file_meth_unmeth <- file_meth_data+file_unmeth_data
-  rownames(file_meth_unmeth) <- rownames(file_data)
-  file_name <- sub("\\.meth$","",file_meth_name)
-  colnames(file_meth_unmeth) <- paste0(file_name,".meth_UNmeth")
-
-  if (flag=="row") {
-    file_data_num_count <- data.frame()
-    file_data_num_count <- rownames(file_meth_unmeth)
-    file_data_num_count <- as.data.frame(file_data_num_count)
-    colnames(file_data_num_count)[1] <- "chr"
-
-    file_meth_data_sum <- apply(file_meth_data, MARGIN = 1, sum)
-    file_data_num_count$chr_meth_UNmeth_SUM <- apply(file_meth_unmeth, MARGIN = 1, sum)
-    file_data_num_count$chr_methlevel <- file_meth_data_sum/file_data_num_count$chr_meth_UNmeth_SUM
-    file_data_num_count_sorted <- arrange(file_data_num_count, -chr_meth_UNmeth_SUM)
-    return(file_data_num_count_sorted)
-  }else if (flag=="col") {
-    file_data_num_count <- data.frame()
-    file_data_num_count <- colnames(file_meth_unmeth)
-    file_data_num_count <- as.data.frame(file_data_num_count)
-    colnames(file_data_num_count)[1] <- "sample"
-
-    file_meth_data_sum <- apply(file_meth_data, MARGIN = 2, sum)
-    file_data_num_count$sample_meth_UNmeth_SUM <- apply(file_meth_unmeth, MARGIN = 2, sum)
-    file_data_num_count$sample_methlevel <- file_meth_data_sum/file_data_num_count$sample_meth_UNmeth_SUM
-    file_data_num_count_sorted <- arrange(file_data_num_count, -sample_meth_UNmeth_SUM)
-    return(file_data_num_count_sorted)
-  }
-}
-
-#' Cov files to text files
+#' Coverage files to text files
 #'
 #' @param cov_file site file name
 #' @param cov_file_data site data
-#' @param chr_tmp chromosome data
+#' @param chr_data chromosome data
 #' @param region chromosomal physical fragment
 #' @param suffixname file extension
 #' @param datatmp select the meth or meth-level method
@@ -81,17 +34,17 @@ QC_meth_unmeth <- function(file_tmp,flag="col"){
 #' @export
 #'
 #' @examples
-Cov_to_data <- function(cov_file, cov_file_data, chr_tmp, region, suffixname, datatmp) {
-  region_chr <- region %>% filter(chr %in% chr_tmp)
+Coverage_to_data <- function(cov_file, cov_file_data, region_data, chr_data, suffixname_data=".cov.gz", type) {
+  region_chr <- region_data %>% filter(chr %in% chr_data)
   cov_data <- cov_file_data
   colnames(cov_data) <- c("chr", "start", "end", "methlevel", "meth", "UNmeth")
-  cov_data_chr <- cov_data %>% filter(chr %in% chr_tmp)
+  cov_data_chr <- cov_data %>% filter(chr %in% chr_data)
   cov_data_chr_order <- cov_data_chr %>%
     group_by(chr) %>%
     arrange(start,.by_group = T)
+  suffixname <- paste0("\\",suffixname_data)
 
-
-  if(datatmp=="meth"){
+  if(type=="meth"){
     # 生成列名
     cov_file_name <- basename(cov_file)
     split_result <- strsplit(cov_file_name, suffixname)[[1]][1]
@@ -100,15 +53,15 @@ Cov_to_data <- function(cov_file, cov_file_data, chr_tmp, region, suffixname, da
     result_data <- data.frame()
 
     # 使用向量化操作代替嵌套循环
-    for (i in 1:length(chr_tmp)) {
+    for (i in 1:length(chr_data)) {
       cov_data_chr_order_chr <- cov_data_chr_order %>%
-        filter(chr %in% chr_tmp[i])
+        filter(chr %in% chr_data[i])
       region_chr_chr <- region_chr %>%
-        filter(chr %in% chr_tmp[i])
+        filter(chr %in% chr_data[i])
 
       region_chr_paste <- sprintf("%s:%s-%s", region_chr_chr$chr, region_chr_chr$start, region_chr_chr$end)
       region_chr_paste <- as.data.frame(region_chr_paste)
-      colnames(region_chr_paste) <- "chr"
+      colnames(region_chr_paste) <- "chrdata"
 
       df_meth <- data.frame(matrix(nrow = nrow(region_chr_paste), ncol = 2))
       rownames(df_meth) <- region_chr_paste$chr
@@ -129,7 +82,7 @@ Cov_to_data <- function(cov_file, cov_file_data, chr_tmp, region, suffixname, da
     return(result_data)
   }
 
-  if(datatmp=="methlevel"){
+  if(type=="methlevel"){
     # 生成列名
     cov_file_name <- basename(cov_file)
     split_result <- strsplit(cov_file_name, suffixname)[[1]][1]
@@ -138,15 +91,15 @@ Cov_to_data <- function(cov_file, cov_file_data, chr_tmp, region, suffixname, da
     result_data <- data.frame()
 
     # 使用向量化操作代替嵌套循环
-    for (i in 1:length(chr_tmp)) {
+    for (i in 1:length(chr_data)) {
       cov_data_chr_order_chr <- cov_data_chr_order %>%
-        filter(chr %in% chr_tmp[i])
+        filter(chr %in% chr_data[i])
       region_chr_chr <- region_chr %>%
-        filter(chr %in% chr_tmp[i])
+        filter(chr %in% chr_data[i])
 
       region_chr_paste <- sprintf("%s:%s-%s", region_chr_chr$chr, region_chr_chr$start, region_chr_chr$end)
       region_chr_paste <- as.data.frame(region_chr_paste)
-      colnames(region_chr_paste) <- "chr"
+      colnames(region_chr_paste) <- "chrdata"
 
       df_methlevel <- data.frame(matrix(nrow = nrow(region_chr_paste), ncol = 2))
       rownames(df_methlevel) <- region_chr_paste$chr
@@ -169,107 +122,120 @@ Cov_to_data <- function(cov_file, cov_file_data, chr_tmp, region, suffixname, da
   }
 }
 
-#' Filtering of site information
+#' Methlevel quality control
 #'
-#' @param files Site information file path
-#' @param save_path Save folder path
+#' @param file_data
+#' @param sample_cutoff
 #'
-#' @return nothing
+#' @returns
 #' @export
 #'
 #' @examples
-Cov_QC <- function(files,save_path){
-  for (i in 1:length(files)) {
-    name <- basename(files[i])
-    result <- sub("\\.cov$", "", name)
-    result2 <- paste0(result, ".csv")
+QC_methlevel_data <- function(file_data,sample_cutoff=0.8){
+  samples_keep <- colMeans(is.na(file_data)) < sample_cutoff
+  CpG_data_clean <- file_data[, samples_keep]
 
-    file_data <- read.table(files[i])
-    colnames(file_data) <- c("chr","start","end","methlevel","meth","UNmeth")
+  cat("After filtering the samples, the matrix dimensions:", dim(CpG_data_clean), "\n")
+  cat("Number of excluded samples:", ncol(file_data) - ncol(CpG_data_clean), "\n")
 
-    file_data_filter <- file_data %>%
-      filter(methlevel>=70 | methlevel<=30)
-    file_data_save_path <- paste0(save_path, result2)
-
-    # write.csv(file_data_filter,file_data_save_path,row.names = F)
-    cat(files[i],"Success\n")
-    fwrite(file_data_filter,file_data_save_path,sep = ',')
-  }
+  return(CpG_data_clean)
 }
 
-#' Differential level data processing
-#'
-#' @param methlevel_data Chromosome-level locus data
-#' @param group_data group data
-#' @param suff group information
-#' @param group_suff grouping field
-#' @param methlevel_group_suff methlevel grouping field
-#'
-#' @return methlevel results
-#' @export
-#'
-#' @examples
-Methlevel_diff <- function(methlevel_data,group_data,group_suff,methlevel_group_suff,suff){
-  group_sample <- group_data %>%
-    filter(.data[[group_suff]] == suff)
-  no_group_sample <- group_data %>%
-    filter(.data[[group_suff]] != suff)
-
-  methlevel_data_meth_target <- methlevel_data[,group_sample[[methlevel_group_suff]]]
-  methlevel_data_meth_control <- methlevel_data[,no_group_sample[[methlevel_group_suff]]]
-
-  methlevel_diff_data <- data.table()
-
-  methlevel_diff_data_target <- rowMeans(methlevel_data_meth_target,na.rm = T)
-  methlevel_diff_data_control <- rowMeans(methlevel_data_meth_control,na.rm = T)
-
-  methlevel_diff_data$rate_diff <- methlevel_diff_data_target-methlevel_diff_data_control
-  methlevel_diff_data_frame <- as.data.frame(methlevel_diff_data)
-  methlevel_diff_data_frame$logFC <- log2(methlevel_diff_data_target/methlevel_diff_data_control)
-  return(methlevel_diff_data_frame)
-}
 
 #' Difference level chart
 #'
-#' @param CpG_DEG_file_data Methylation differences
-#' @param GpC_DEG_file_data Open difference information
+#' @param CpG_DEG_file_data Methylation differences information
+#' @param GpC_DEG_file_data Chromitan difference information
 #'
 #' @return CpG and GpC differences data
 #' @export
 #'
 #' @examples
-DEG_diff_plot <- function(CpG_DEG_file_data,GpC_DEG_file_data){
+DEG_diff_process <- function(CpG_DEG_file_data,GpC_DEG_file_data){
   # CpG_DEG_file_data <- read.csv(CpG_DEG_files)
   # GpC_DEG_file_data <- read.csv(GpC_DEG_files)
 
-  CpG_DEG_file_data_clean_df_nan_na <- CpG_DEG_file_data %>%
-    filter(!is.nan(rate_diff) & !is.na(rate_diff))
+  CpG_GpC_chrdata <- intersect(CpG_DEG_file_data$chrdata,GpC_DEG_file_data$chrdata)
 
+  CpG_DEG_data_choose_union <- CpG_DEG_file_data %>%
+    filter(chrdata %in% CpG_GpC_chrdata)
 
-  GpC_DEG_file_data_clean_df_nan_na <- GpC_DEG_file_data %>%
-    filter(!is.nan(rate_diff) & !is.na(rate_diff))
+  GpC_DEG_data_choose_union <- GpC_DEG_file_data %>%
+    filter(chrdata %in% CpG_GpC_chrdata)
 
-  CpG_GpC_DEG_union <- intersect(GpC_DEG_file_data_clean_df_nan_na$chr,
-                                 CpG_DEG_file_data_clean_df_nan_na$chr)
-  # CpG_GpC_DEG_geneid <- intersect(GpC_DEG_file_data_clean_df_nan_na$genename,
-  #                                 CpG_DEG_file_data_clean_df_nan_na$genename)
-  CpG_GpC_DEG_genename <- GpC_DEG_file_data_clean_df_nan_na %>%
-    filter(chr %in% CpG_GpC_DEG_union)
+  colnames(CpG_DEG_data_choose_union) <- paste0("CpG.", colnames(CpG_DEG_data_choose_union))
+  colnames(GpC_DEG_data_choose_union) <- paste0("GpC.", colnames(GpC_DEG_data_choose_union))
 
-  CpG_DEG_file_data_choose <- subset(CpG_DEG_file_data_clean_df_nan_na, chr %in% CpG_GpC_DEG_union)
-  GpC_DEG_file_data_choose <- subset(GpC_DEG_file_data_clean_df_nan_na, chr %in% CpG_GpC_DEG_union)
-
-
-  gene_diff <- data.frame(chr=CpG_DEG_file_data_choose$chr,
-                          CpG_p.value=CpG_DEG_file_data_choose$P.value,
-                          CpG_adj_p.value=CpG_DEG_file_data_choose$adj_P.value_fdr,
-                          GpC_p.value=GpC_DEG_file_data_choose$P.value,
-                          GpC_adj_p.value=GpC_DEG_file_data_choose$adj_P.value_fdr,
-                          CpG_rate_diff=CpG_DEG_file_data_choose$rate_diff,
-                          GpC_rate_diff=GpC_DEG_file_data_choose$rate_diff,
-                          geneid=CpG_GpC_DEG_genename$geneid,
-                          genename=CpG_GpC_DEG_genename$genename
-  )
-  return(gene_diff)
+  DEG_data_union <- cbind(CpG_DEG_data_choose_union,GpC_DEG_data_choose_union)
+  return(DEG_data_union)
 }
 
+
+#' Dimensionality reduction processing
+#'
+#' @param file_data Enter level data
+#' @param method Dimension reduction methods
+#'
+#' @returns Dimension reduction results
+#' @export
+#'
+#' @examples
+DR_process <- function(file_data,method="MDS"){
+  if (method=="MDS") {
+    cor_matrix <- cor(file_data, use = "pairwise.complete.obs", method = "spearman")
+    # 将相关性转换为距离 (1 - correlation)
+    dist_matrix <- as.dist(1 - cor_matrix)
+    # 如果 dist_matrix 里有 NA，需要把 NA 替换为最大距离
+    dist_matrix[is.na(dist_matrix)] <- 1
+    # MDS 降维 (cmdscale)
+    mds_points <- cmdscale(dist_matrix, k = 2, eig = TRUE)
+    return(mds_points)
+  }else if (method=="PCA") {
+    pca_res <- prcomp(t(file_data),
+                      center = T,
+                      scale. = F,
+                      rank. = 30)
+    return(pca_res)
+  }else if (method=="UMAP") {
+    data_umap_res <- uwot::umap(file_data,n_neighbors=100,min_dist=0.5)
+    return(data_umap_res)
+  }
+}
+
+
+#' Calculate the silhouette coefficient
+#'
+#' @param file_data Dimensionality reduction data
+#' @param file_type Dimensionality-Reduced data types
+#'
+#' @returns Mean Silhouette coefficient value
+#' @export
+#'
+#' @examples
+SC_process <- function(file_data,file_type="UMAP"){
+  if (file_type=="UMAP") {
+    umap_coords <- file_data[,c(1,2)]
+    umap_groups <- file_data$Stage
+    umap_dist <- dist(umap_coords)
+    sil_umap <- silhouette(as.numeric(factor(umap_groups)), umap_dist)
+    mean_sil_umap <- mean(sil_umap[, 3])
+    cat("UMAP Mean Silhouette Coefficient Value:", round(mean_sil_umap, 3), "\n")
+    return(mean_sil_umap)
+  }else if(file_type=="PCA"){
+    pca_coords <- file_data[,c(1,2)]
+    pca_groups <- file_data$Stage
+    pca_dist <- dist(pca_coords)
+    sil_pca <- silhouette(as.numeric(factor(pca_groups)), pca_dist)
+    mean_sil_pca <- mean(sil_pca[, 3])
+    cat("PCA Mean Silhouette Coefficient Value:", round(mean_sil_pca, 3), "\n")
+    return(mean_sil_pca)
+  }else if(file_type=="MDS"){
+    mds_coords <- file_data[,c(1,2)]
+    mds_groups <- file_data$Stage
+    mds_dist <- dist(mds_coords)
+    sil_mds <- silhouette(as.numeric(factor(mds_groups)), mds_dist)
+    mean_sil_mds <- mean(sil_mds[, 3])
+    cat("MDS Mean Silhouette Coefficient Value:", round(mean_sil_mds, 3), "\n")
+    return(mean_sil_mds)
+  }
+}

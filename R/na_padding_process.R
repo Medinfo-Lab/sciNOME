@@ -161,3 +161,25 @@ NA_padding_mean <- function(file_tmp,flag="row"){
     close(pb)
   }
 }
+
+#' The NA value is populated by the KNN
+#'
+#' @param file_tmp Methlevel data of DNA methylation or chromatin accessibility
+#' @param sample_cutoff column cutoff
+#'
+#' @return After filling the matrix
+#' @export
+#'
+#' @examples
+KNN_padding <- function(file_tmp, sample_cutoff = 0.8){
+  samples_keep <- colMeans(is.na(file_tmp)) < sample_cutoff
+  CpG_data_clean <- file_tmp[, samples_keep]
+
+  cat("After filtering the samples, the matrix dimensions:", dim(CpG_data_clean), "\n")
+  cat("Number of excluded samples:", ncol(file_tmp) - ncol(CpG_data_clean), "\n")
+
+  CpG_data_clean <- as.matrix(CpG_data_clean)
+  CpG_data_clean_imputed_res <- impute.knn(CpG_data_clean, k = 10)
+
+  return(CpG_data_clean_imputed_res$data)
+}
