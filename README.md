@@ -22,7 +22,7 @@ If you prefer to build the package by hand, follow these steps:
 ```R
 git clone git@github.com:Medinfo-Lab/sciNOME.git
 R CMD build sciNOME
-R CMD INSTALL sciNOME-0.1.4.tar.gz
+R CMD INSTALL sciNOME-0.2.4.tar.gz
 ```
 
 # Usage
