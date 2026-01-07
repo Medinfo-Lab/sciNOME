@@ -16,31 +16,18 @@ library(circlize)
 
 
 
-load("GSE232650_RNA_Data.RData")
+load("data/GSE232650_RNA_Data.RData")
 
 
 #object----
-GSE121650_pbmc <- CreateSeuratObject(counts = GSE121650_RNA_data_counts_filter,
-                                     min.cells = 50, min.features = 0, project = "SmartSeq2_project")
-# GSE121650_pbmc[["percent.mt"]] <- PercentageFeatureSet(GSE121650_pbmc, pattern = "^mt-")
-# VlnPlot(GSE121650_pbmc, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+GSE121650_pbmc <- CreatRNAObject(GSE121650_RNA_data_counts_filter,
+                                 min.cells = 50, min.features = 0)
 
 GSE121650_RNA_sample_seurat_group <- GSE121650_RNA_sample_data %>%
   filter(Run %in% colnames(GSE121650_pbmc))
 GSE121650_pbmc <- AddMetaData(object = GSE121650_pbmc,
                               metadata = GSE121650_RNA_sample_data$Developmental_stage,
                               col.name = "group1")
-
-GSE121650_pbmc <- NormalizeData(GSE121650_pbmc, normalization.method = "LogNormalize")
-GSE121650_pbmc <- FindVariableFeatures(GSE121650_pbmc, selection.method = "vst", nfeatures = 2000)
-GSE121650_pbmc_variable_data <- VariableFeatures(GSE121650_pbmc)
-GSE121650_pbmc <- ScaleData(GSE121650_pbmc,features = rownames(GSE121650_pbmc))
-GSE121650_pbmc <- RunPCA(GSE121650_pbmc, features = rownames(GSE121650_pbmc))
-GSE121650_pbmc <- FindNeighbors(GSE121650_pbmc)
-GSE121650_pbmc <- FindClusters(GSE121650_pbmc,resolution = 0.5)
-GSE121650_pbmc <- RunUMAP(GSE121650_pbmc, dims = 1:20)
-# GSE121650_pbmc <- RunUMAP(GSE121650_pbmc,dims = 1:50,
-#                           min.dist = 1,n.neighbors = 100)
 
 
 #pca umap----
@@ -49,18 +36,15 @@ normalized_matrix_frame <- as.data.frame(normalized_matrix)
 normalized_matrix_frame_t <- t(normalized_matrix_frame)
 
 #pca
-pca_res <- prcomp(normalized_matrix_frame_t, center = T, scale. = T, rank. = 30)
-var_explained <- pca_res$sdev^2 / sum(pca_res$sdev^2)
-pc1_lab <- paste0("PC1 (", round(var_explained[1] * 100, 1), "%)")
-pc2_lab <- paste0("PC2 (", round(var_explained[2] * 100, 1), "%)")
-pca_embedding <- as.data.frame(pca_res$x)
+pca_res <- DR_process(normalized_matrix_frame_t,method="PCA")
 
-pca_embedding$Group <- GSE121650_RNA_sample_seurat_group$Developmental_stage
+pca_res[[1]]$Group <- GSE121650_RNA_sample_seurat_group$Developmental_stage
+pca_data <- pca_res[[1]]
 
-ggplot(pca_embedding, aes(x = PC1, y = PC2, color = Group)) +
+ggplot(pca_data, aes(x = PC1, y = PC2, color = Group)) +
   geom_point(size = 3.5, alpha = 0.85) +
   theme_classic()+
-  labs(x = pc1_lab,y = pc2_lab,title = "RNA Developmental Stage PCA")+
+  labs(x = pca_res[[2]],y = pca_res[[3]],title = "RNA Developmental Stage PCA")+
   theme(legend.title=element_blank(),
         plot.title = element_text(color="black",hjust=0.5,vjust=0.5,size=18,face="bold"),
         axis.title.x = element_text(size = 15),
@@ -71,18 +55,30 @@ ggplot(pca_embedding, aes(x = PC1, y = PC2, color = Group)) +
   scale_color_manual(breaks = c("E4.5","E5.5", "E6.5","E7.5"),
                      values = c("#E69F00", "#56B4E9", "#009E73", "#CC79A7"))
 
+#tSNE
+tsne_data <- DR_process(normalized_matrix_frame_t,method="tSNE")
+tsne_data$Group <- GSE121650_RNA_sample_seurat_group$Developmental_stage
 
+ggplot(tsne_data, aes(x = tSNE_1, y = tSNE_2, color = Group)) +
+  geom_point(size = 3.5, alpha = 0.85) +
+  theme_classic()+
+  labs(x = "tSNE_1",y = "tSNE_2",title = "RNA Developmental Stage tSNE")+
+  theme(legend.title=element_blank(),
+        plot.title = element_text(color="black",hjust=0.5,vjust=0.5,size=18,face="bold"),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15)
+        # axis.text.x = element_text(size = 13),
+        # axis.text.y = element_text(size = 13)
+  )+
+  scale_color_manual(breaks = c("E4.5","E5.5", "E6.5","E7.5"),
+                     values = c("#E69F00", "#56B4E9", "#009E73", "#CC79A7"))
 
 #umap
-normalized_scale_matrix <- GetAssayData(GSE121650_pbmc, slot = "data")
-# umap_result <- umap(t(normalized_scale_matrix),n_neighbors = 100, min_dist = 1, metric = "cosine")
-umap_result <- umap(pca_embedding,n_neighbors = 100, min_dist = 1, metric = "cosine")
+umap_result <- DR_process(normalized_matrix_frame_t,method="RNA_UMAP",min_dist = 1)
 
-umap_df <- as.data.frame(umap_result)
-colnames(umap_df) <- c("UMAP1", "UMAP2")
-umap_df$Group <- GSE121650_RNA_sample_seurat_group$Developmental_stage
+umap_result$Group <- GSE121650_RNA_sample_seurat_group$Developmental_stage
 
-ggplot(umap_df, aes(x = UMAP1, y = UMAP2, color = Group)) +
+ggplot(umap_result, aes(x = UMAP1, y = UMAP2, color = Group)) +
   geom_point(size = 3.5, alpha = 0.85) +
   theme_classic()+
   labs(x = "UMAP1",y = "UMAP2",title = "RNA Developmental Stage UMAP")+
@@ -95,12 +91,10 @@ ggplot(umap_df, aes(x = UMAP1, y = UMAP2, color = Group)) +
   )+
   scale_color_manual(breaks = c("E4.5","E5.5", "E6.5","E7.5"),
                      values = c("#E69F00", "#56B4E9", "#009E73", "#CC79A7"))
-# write.csv(umap_df,"plot/RNA/umap.csv")
 
 
 #DEG----
 Idents(GSE121650_pbmc) <- GSE121650_pbmc$group1
-# Idents(GSE121650_pbmc) <- GSE121650_pbmc$seurat_clusters
 GSE121650_pbmc_markers <- FindAllMarkers(GSE121650_pbmc)
 
 GSE121650_pbmc_markers_result  <- merge(
@@ -110,7 +104,6 @@ GSE121650_pbmc_markers_result  <- merge(
   by.y = "Geneid",
   all.x = TRUE
 )
-# write.csv(GSE121650_pbmc_markers_result,"data/RNA/GSE121650_markers_result.csv")
 
 GSE121650_pbmc_markers_P <- GSE121650_pbmc_markers_result %>%
   filter(p_val_adj < 0.01)
@@ -118,19 +111,6 @@ GSE121650_pbmc_markers_P <- GSE121650_pbmc_markers_result %>%
 GSE121650_pbmc_markers_P_logfc <- GSE121650_pbmc_markers_P %>%
   group_by(cluster) %>%
   slice_max(n = 200, order_by = avg_log2FC)
-
-DoHeatmap(GSE121650_pbmc,features = GSE121650_pbmc_markers_P_logfc$gene, angle = 20,
-          group.colors = c("E4.5"="#E69F00","E5.5"="#56B4E9","E6.5"="#009E73","E7.5"="#CC79A7"),
-          label = T,slot = "scale.data")+
-  scale_fill_gradient2(
-    low = "#0571B0",
-    mid = "#F7F7F7",
-    high = "#CA0020",
-    midpoint = 0)+
-  theme(
-    axis.text.y = element_blank(),  # 隐藏Y轴文本（基因名）
-    axis.ticks.y = element_blank()   # 可选：隐藏Y轴刻度线
-  )
 
 mat <- GetAssayData(GSE121650_pbmc, layer = "scale.data")
 mat <- mat[GSE121650_pbmc_markers_P_logfc$gene, ]
@@ -146,39 +126,36 @@ top_anno <- HeatmapAnnotation(
 Heatmap(
   mat,
   name = "Expression", # 图例的名字
-
   # --- 颜色设置 ---
   # 经典的紫-黑-黄配色 (Seurat风格)
   col = colorRamp2(c(-2, 0, 2), c("#0571B0", "#F7F7F7", "#CA0020")),
   # 或者红-白-蓝: colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
-
   # --- 行列设置 ---
   cluster_rows = FALSE,  # 是否聚类行（基因），通常 Marker 图不需要聚类，按 Top10 顺序排列
   cluster_columns = FALSE, # 是否聚类列（细胞），通常我们按 Cluster 分割，内部不聚类
   show_column_names = FALSE, # 细胞太多，不显示细胞名
   show_row_names = F,     # 显示基因名
-
   # --- 分割与注释 ---
   top_annotation = top_anno, # 加上刚才做的顶部注释条
   column_split = cluster_info, # 核心参数：按 Cluster 切分热图
   # row_split = top10$cluster,   # (可选) 按 Cluster 切分基因行，看起来更清晰
-
   # --- 美化细节 ---
   # row_names_gp = gpar(fontsize = 8), # 基因名字体大小
   column_title = NULL, # 去掉列的大标题
   use_raster = TRUE # 如果细胞很多，开启光栅化渲染，速度更快
 )
 
+#volcano
+GSE121650_pbmc_markers_volcano <- GSE121650_pbmc_markers_result %>%
+  filter(p_val_adj < 1e-15)
 
-
-
-volcano_data <- GSE121650_pbmc_markers_P %>%
+volcano_data <- GSE121650_pbmc_markers_volcano %>%
   mutate(
-    gene = GSE121650_pbmc_markers_P$gene_name,  # 确保有基因名列
+    gene = GSE121650_pbmc_markers_volcano$gene_name,  # 确保有基因名列
     log_padj = -log10(p_val_adj),  # 转换校正p值
     direction = case_when(         # 标记上下调
-      avg_log2FC > 1 & p_val_adj < 0.01 ~ "Up",
-      avg_log2FC < -1 & p_val_adj < 0.01 ~ "Down",
+      avg_log2FC > 1 ~ "Up",
+      avg_log2FC < -1 ~ "Down",
       TRUE ~ "Normal"
     )
   ) %>%
@@ -194,7 +171,6 @@ top_genes_down <- volcano_data %>%
   filter(direction == "Down") %>%
   arrange(p_val_adj) %>%
   head(5)
-
 
 ggplot(volcano_data, aes(x = avg_log2FC, y = log_padj, color = direction)) +
   geom_point(alpha=0.9, size=2) +
@@ -242,7 +218,6 @@ enrichment_genes_UP <- volcano_data %>%
 
 enrichment_genes_DOWN <- volcano_data %>%
   filter(direction == "Down")
-
 
 gene_ids <- bitr(enrichment_genes_UP$gene_name,
                  fromType="SYMBOL",

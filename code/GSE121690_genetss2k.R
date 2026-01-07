@@ -39,36 +39,22 @@ GSE121690_GpC_methlevel_choose <- GSE121690_GpC_methlevel[rownames(GSE121690_GpC
 
 #CpG umap----
 sample_cutoff <- 0.8
-samples_keep <- colMeans(is.na(GSE121690_CpG_methlevel_choose)) < sample_cutoff
-CpG_data_clean <- GSE121690_CpG_methlevel_choose[, samples_keep]
-
-cat("After filtering the samples, the matrix dimensions:", dim(CpG_data_clean), "\n")
-cat("Number of excluded samples:", ncol(GSE121690_CpG_methlevel_choose) - ncol(CpG_data_clean), "\n")
+CpG_data_clean <- QC_methlevel_data(GSE121690_CpG_methlevel_choose,sample_cutoff)
 
 CpG_data_clean <- as.matrix(CpG_data_clean)
-GSE121690_CpG_methlevel_choose_imputed_res <- impute.knn(CpG_data_clean, k = 10)
-GSE121690_CpG_methlevel_choose_imputed_res_data <- GSE121690_CpG_methlevel_choose_imputed_res$data
+GSE121690_CpG_methlevel_choose_imputed_res_data <- KNN_padding(CpG_data_clean, k = 10)
 GSE121650_CpG_methlevel_sample_group <- GSE121690_CpG_Epis_sample %>%
   filter(Sample_title %in% colnames(CpG_data_clean))
 
 
-#不插补 + 相关性距离 + MDS (PCoA) —— 最适合高稀疏数据
-# 计算细胞间的相关性矩阵
-CpG_cor_matrix <- cor(CpG_data_clean, use = "pairwise.complete.obs", method = "spearman")
-# 将相关性转换为距离 (1 - correlation)
-CpG_dist_matrix <- as.dist(1 - CpG_cor_matrix)
-# 如果 dist_matrix 里有 NA，需要把 NA 替换为最大距离
-CpG_dist_matrix[is.na(CpG_dist_matrix)] <- 1
-# MDS 降维 (cmdscale)
-CpG_mds_points <- cmdscale(CpG_dist_matrix, k = 2, eig = TRUE)
+#MDS
+CpG_mds_points <- DR_process(CpG_data_clean,method="MDS")
 
 CpG_mds_data <- data.frame(
   Dim1 = CpG_mds_points$points[,1],
   Dim2 = CpG_mds_points$points[,2],
   Stage = GSE121650_CpG_methlevel_sample_group$Developmental_stage
 )
-# write.csv(CpG_mds_data,"plot/genetss2k/UMAP_DATA/genetss2k_CpG_mds.csv")
-# CpG_mds_data <- read.csv("plot/genetss2k/UMAP_DATA/genetss2k_CpG_mds.csv")
 
 ggplot(CpG_mds_data, aes(x=Dim1, y=Dim2, color=Stage)) +
   geom_point(CpG_mds_data,mapping=aes(Dim1,Dim2,color=Stage),size = 3.5,alpha = 0.85)+
@@ -88,21 +74,16 @@ ggplot(CpG_mds_data, aes(x=Dim1, y=Dim2, color=Stage)) +
 #pca
 GSE121690_CpG_methlevel_choose_mean <- NA_padding_mean(CpG_data_clean)
 
-pca_res <- prcomp(t(GSE121690_CpG_methlevel_choose_mean),
-                  center = T,
-                  scale. = T,
-                  rank. = 30)
-var_explained <- pca_res$sdev^2 / sum(pca_res$sdev^2)
-pc1_lab <- paste0("PC1 (", round(var_explained[1] * 100, 1), "%)")
-pc2_lab <- paste0("PC2 (", round(var_explained[2] * 100, 1), "%)")
-pca_df <- as.data.frame(pca_res$x)
-pca_df$Stage <- GSE121650_CpG_methlevel_sample_group$Developmental_stage # 加上分组信息
-# write.csv(pca_df,"plot/genetss2k/UMAP_DATA/genetss2k_CpG_pca.csv")
+pca_res <- DR_process(t(GSE121690_CpG_methlevel_choose_mean),
+                      method = "PCA",scale=F)
+
+pca_df <- pca_res[[1]]
+pca_df$Stage <- GSE121650_CpG_methlevel_sample_group$Developmental_stage
 
 ggplot(pca_df)+
   geom_point(pca_df,mapping=aes(PC1,PC2,color=Stage),size = 3.5,alpha = 0.85)+
   theme_bw()+
-  labs(x = pc1_lab,y = pc2_lab,title = "GeneTSS2k CpG PCA")+
+  labs(x = pca_res[[2]],y = pca_res[[3]],title = "GeneTSS2k CpG PCA")+
   theme(legend.title=element_blank(),
         plot.title = element_text(color="black",hjust=0.5,vjust=0.5,size=18,face="bold"),
         axis.title.x = element_text(size = 15),
@@ -116,17 +97,13 @@ ggplot(pca_df)+
 
 
 #umap
-# GSE121690_CpG_methlevel_choose_imputed_res_data_umap_res <- umap(t(GSE121690_CpG_methlevel_choose_imputed_res_data),
-#                                                                  n_neighbors = 100, min_dist = 0.5)
-GSE121690_CpG_methlevel_choose_imputed_res_data_umap_res <- umap(pca_df,
-                                                                 n_neighbors = 100, min_dist = 1)
-
+GSE121690_CpG_methlevel_choose_imputed_res_data_umap_res <- DR_process(pca_res[[1]],method="Epi_UMAP",
+                                                                       n_neighbors = 15,min_dist = 0.01)
 plot_df <- data.frame(
   UMAP1 = GSE121690_CpG_methlevel_choose_imputed_res_data_umap_res[,1],
   UMAP2 = GSE121690_CpG_methlevel_choose_imputed_res_data_umap_res[,2],
   Stage = GSE121650_CpG_methlevel_sample_group$Developmental_stage
 )
-# write.csv(plot_df,"plot/genetss2k/UMAP_DATA/genetss2k_CpG_umap.csv")
 
 ggplot(plot_df)+
   geom_point(plot_df,mapping=aes(UMAP1,UMAP2,color=Stage),size = 3.5,alpha = 0.85)+
@@ -145,98 +122,24 @@ ggplot(plot_df)+
 
 
 
-#CpG mofa----
-GSE121690_CpG_methlevel_choose_mean_matrix <- as.matrix(CpG_data_clean)
-mofa_list <- list()
-mofa_list$file1 <- GSE121690_CpG_methlevel_choose_mean_matrix
-
-GSE121690_CpG_mofa <- create_mofa(mofa_list,group = GSE121650_CpG_methlevel_sample_group$Developmental_stage)
-
-ModelOptions <- get_default_model_options(GSE121690_CpG_mofa)
-TrainOptions <- get_default_training_options(GSE121690_CpG_mofa)
-DataOptions <- get_default_data_options(GSE121690_CpG_mofa)
-
-# TrainOptions$convergence_mode <- "medium"
-# DataOptions$scale_views <- TRUE
-# DataOptions$center_groups <- TRUE
-
-GSE121690_CpG_mofa <- prepare_mofa(GSE121690_CpG_mofa,
-                                   model_options = ModelOptions,
-                                   training_options = TrainOptions,
-                                   data_options = DataOptions)
-
-GSE121690_CpG_mofa <- run_mofa(GSE121690_CpG_mofa)
-
-# GSE121690_CpG_mofa <- run_umap(GSE121690_CpG_mofa)
-GSE121690_CpG_mofa <- run_umap(GSE121690_CpG_mofa,
-                               n_neighbors = 100, min_dist = 0.5)
-
-plot_dimred(GSE121690_CpG_mofa, method = "UMAP",color_by = "group",dot_size = 2,label = F)+
-  theme(legend.title=element_blank())
-
-
-GSE121690_CpG_umap_data <- GSE121690_CpG_mofa@dim_red$UMAP
-GSE121690_CpG_umap_data <- cbind(GSE121690_CpG_umap_data,GSE121690_CpG_mofa@samples_metadata$group)
-colnames(GSE121690_CpG_umap_data)[4] <- "group"
-rownames(GSE121690_CpG_umap_data) <- 1:nrow(GSE121690_CpG_umap_data)
-
-# write.csv(GSE121690_CpG_umap_data,"plot/genetss2k/UMAP_DATA/genetss2k_CpG_mofaumap.csv",row.names = F)
-# GSE121690_CpGgene_umap_data <- read.csv("plot/genetss2k/UMAP_DATA/genetss2k_CpG_mofaumap.csv")
-
-ggplot(GSE121690_CpG_umap_data)+
-  geom_point(GSE121690_CpG_umap_data,mapping=aes(UMAP1,UMAP2,color=group),size = 4,alpha = 0.85)+
-  theme_bw()+
-  labs(x = "UMAP1",y = "UMAP2",title = "GeneTSS2k CpG MOFA UMAP")+
-  theme(legend.title=element_blank(),
-        plot.title = element_text(hjust = 0.5,size = 18,face = "bold"),
-        axis.title.x = element_text(size = 15),
-        axis.title.y = element_text(size = 15)
-        # axis.text.x = element_text(size = 13),
-        # axis.text.y = element_text(size = 13)
-  )+
-  scale_color_manual(breaks = c("E4.5","E5.5", "E6.5","E7.5"),
-                     values = c("#E69F00", "#56B4E9", "#009E73", "#CC79A7"))
-# theme_dr()
-# theme_dr(xlength = 0.2,
-#          ylength = 0.2,
-#          arrow = arrow(length = unit(0.2, "inches"),type = "closed"))
-# "#E69F00", "#56B4E9", "#009E73", "#CC79A7"
-
-
-
-
 #GpC umap----
 sample_cutoff <- 0.8
-samples_keep <- colMeans(is.na(GSE121690_GpC_methlevel_choose)) < sample_cutoff
-GpC_data_clean <- GSE121690_GpC_methlevel_choose[, samples_keep]
-
-cat("After filtering the samples, the matrix dimensions:", dim(GpC_data_clean), "\n")
-cat("Number of excluded samples:", ncol(GSE121690_GpC_methlevel_choose) - ncol(GpC_data_clean), "\n")
+CpG_data_clean <- QC_methlevel_data(GSE121690_GpC_methlevel_choose,sample_cutoff)
 
 GpC_data_clean <- as.matrix(GpC_data_clean)
-GSE121690_GpC_methlevel_choose_imputed_res <- impute.knn(GpC_data_clean, k = 10)
-GSE121690_GpC_methlevel_choose_imputed_res_data <- GSE121690_GpC_methlevel_choose_imputed_res$data
+GSE121690_GpC_methlevel_choose_imputed_res_data <- KNN_padding(GpC_data_clean, k = 10)
 GSE121650_GpC_methlevel_sample_group <- GSE121690_GpC_Epis_sample %>%
   filter(Sample_title %in% colnames(GpC_data_clean))
 
 
-#不插补 + 相关性距离 + MDS (PCoA) —— 最适合高稀疏数据
-# 计算细胞间的相关性矩阵
-GpC_cor_matrix <- cor(GpC_data_clean, use = "pairwise.complete.obs", method = "spearman")
-# 将相关性转换为距离 (1 - correlation)
-GpC_dist_matrix <- as.dist(1 - GpC_cor_matrix)
-# 如果 dist_matrix 里有 NA，需要把 NA 替换为最大距离
-GpC_dist_matrix[is.na(GpC_dist_matrix)] <- 1
-# MDS 降维 (cmdscale)
-GpC_mds_points <- cmdscale(GpC_dist_matrix, k = 2, eig = TRUE)
+#MDS
+GpC_mds_points <- DR_process(GpC_data_clean,method="MDS")
 
 GpC_mds_data <- data.frame(
   Dim1 = GpC_mds_points$points[,1],
   Dim2 = GpC_mds_points$points[,2],
   Stage = GSE121650_GpC_methlevel_sample_group$Developmental_stage
 )
-# write.csv(GpC_mds_data,"plot/genetss2k/UMAP_DATA/genetss2k_GpC_mds.csv")
-# GpC_mds_data <- read.csv("plot/genetss2k/UMAP_DATA/genetss2k_GpC_mds.csv")
 
 ggplot(GpC_mds_data, aes(x=Dim1, y=Dim2, color=Stage)) +
   geom_point(GpC_mds_data,mapping=aes(Dim1,Dim2,color=Stage),size = 3.5,alpha = 0.85)+
@@ -256,21 +159,16 @@ ggplot(GpC_mds_data, aes(x=Dim1, y=Dim2, color=Stage)) +
 #pca
 GSE121690_GpC_methlevel_choose_mean <- NA_padding_mean(GpC_data_clean)
 
-pca_res <- prcomp(t(GSE121690_GpC_methlevel_choose_mean),
-                  center = T,
-                  scale. = T,
-                  rank. = 30)
-var_explained <- pca_res$sdev^2 / sum(pca_res$sdev^2)
-pc1_lab <- paste0("PC1 (", round(var_explained[1] * 100, 1), "%)")
-pc2_lab <- paste0("PC2 (", round(var_explained[2] * 100, 1), "%)")
-pca_df <- as.data.frame(pca_res$x)
-pca_df$Stage <- GSE121650_GpC_methlevel_sample_group$Developmental_stage # 加上分组信息
-# write.csv(pca_df,"plot/genetss2k/UMAP_DATA/genetss2k_GpC_pca.csv")
+pca_res <- DR_process(t(GSE121690_GpC_methlevel_choose_mean),
+                      method = "PCA",scale=F)
+
+pca_df <- pca_res[[1]]
+pca_df$Stage <- GSE121650_GpC_methlevel_sample_group$Developmental_stage
 
 ggplot(pca_df)+
   geom_point(pca_df,mapping=aes(PC1,PC2,color=Stage),size = 3.5,alpha = 0.85)+
   theme_bw()+
-  labs(x = pc1_lab,y = pc2_lab,title = "GeneTSS2k GpC PCA")+
+  labs(x = pca_res[[2]],y = pca_res[[3]],title = "GeneTSS2k GpC PCA")+
   theme(legend.title=element_blank(),
         plot.title = element_text(color="black",hjust=0.5,vjust=0.5,size=18,face="bold"),
         axis.title.x = element_text(size = 15),
@@ -284,17 +182,14 @@ ggplot(pca_df)+
 
 
 #umap
-# GSE121690_GpC_methlevel_choose_imputed_res_data_umap_res <- umap(t(GSE121690_GpC_methlevel_choose_imputed_res_data),
-#                                                                  n_neighbors = 100, min_dist = 0.5,metric = "cosine")
-GSE121690_GpC_methlevel_choose_imputed_res_data_umap_res <- umap(pca_df,n_neighbors = 100, min_dist = 0.5)
+GSE121690_GpC_methlevel_choose_imputed_res_data_umap_res <- DR_process(pca_res[[1]],method="Epi_UMAP",
+                                                                       n_neighbors = 15,min_dist = 0.01)
 
 plot_df <- data.frame(
   UMAP1 = GSE121690_GpC_methlevel_choose_imputed_res_data_umap_res[,1],
   UMAP2 = GSE121690_GpC_methlevel_choose_imputed_res_data_umap_res[,2],
   Stage = GSE121650_GpC_methlevel_sample_group$Developmental_stage
 )
-# write.csv(plot_df,"plot/genetss2k/UMAP_DATA/genetss2k_GpC_umap.csv")
-
 
 ggplot(plot_df)+
   geom_point(plot_df,mapping=aes(UMAP1,UMAP2,color=Stage),size = 4,alpha = 0.9)+
@@ -310,61 +205,6 @@ ggplot(plot_df)+
   scale_color_manual(breaks = c("E4.5","E5.5", "E6.5","E7.5"),
                      values = c("#E69F00", "#56B4E9", "#009E73", "#CC79A7"))
 # theme_dr()
-
-
-#GpC mofa----
-GSE121690_GpC_methlevel_choose_mean_matrix <- as.matrix(GpC_data_clean)
-mofa_list <- list()
-mofa_list$file1 <- GSE121690_GpC_methlevel_choose_mean_matrix
-
-GSE121690_GpC_mofa <- create_mofa(mofa_list,group = GSE121650_GpC_methlevel_sample_group$Developmental_stage)
-
-ModelOptions <- get_default_model_options(GSE121690_GpC_mofa)
-TrainOptions <- get_default_training_options(GSE121690_GpC_mofa)
-DataOptions <- get_default_data_options(GSE121690_GpC_mofa)
-
-# TrainOptions$convergence_mode <- "slow"
-# DataOptions$scale_views <- TRUE
-# DataOptions$center_groups <- TRUE
-
-GSE121690_GpC_mofa <- prepare_mofa(GSE121690_GpC_mofa,
-                                   model_options = ModelOptions,
-                                   training_options = TrainOptions,
-                                   data_options = DataOptions)
-
-GSE121690_GpC_mofa <- run_mofa(GSE121690_GpC_mofa)
-
-# GSE121690_GpC_mofa <- run_umap(GSE121690_GpC_mofa,min_dist = 1,spread = 2)
-GSE121690_GpC_mofa <- run_umap(GSE121690_GpC_mofa,
-                               n_neighbors = 100, min_dist = 0.5)
-
-plot_dimred(GSE121690_GpC_mofa, method = "UMAP",color_by = "group",dot_size = 2,label = F)+
-  theme(legend.title=element_blank())
-
-GSE121690_GpC_umap_data <- GSE121690_GpC_mofa@dim_red$UMAP
-GSE121690_GpC_umap_data <- cbind(GSE121690_GpC_umap_data,GSE121690_GpC_mofa@samples_metadata$group)
-colnames(GSE121690_GpC_umap_data)[4] <- "group"
-rownames(GSE121690_GpC_umap_data) <- 1:nrow(GSE121690_GpC_umap_data)
-
-# write.csv(GSE121690_GpC_umap_data,"plot/genetss2k/UMAP_DATA/genetss2k_GpC_mofaumap.csv",row.names = F)
-# GSE121690_GpCgene_umap_data <- read.csv("plot/genetss2k/UMAP_DATA/genetss2k_GpC_mofaumap.csv")
-
-ggplot(GSE121690_GpC_umap_data)+
-  geom_point(GSE121690_GpC_umap_data,mapping=aes(UMAP1,UMAP2,color=group),size = 4,alpha = 0.85)+
-  theme_bw()+
-  labs(x = "UMAP1",y = "UMAP2",title = "GeneTSS2k GpC MOFA UMAP")+
-  theme(legend.title=element_blank(),
-        plot.title = element_text(hjust = 0.5,size = 18,face = "bold"),
-        axis.title.x = element_text(size = 15),
-        axis.title.y = element_text(size = 15)
-        # axis.text.x = element_text(size = 13),
-        # axis.text.y = element_text(size = 13)
-        )+
-  scale_color_manual(breaks = c("E4.5","E5.5", "E6.5","E7.5"),
-                     values = c("#E69F00", "#56B4E9", "#009E73", "#CC79A7"))
-
-# "#E69F00", "#56B4E9", "#009E73", "#CC79A7"
-# load("GSE121690_Epi_GeneTSS2k_Dimensionality.RData")
 
 
 #Silhouette Score----
@@ -385,46 +225,23 @@ mds_data <- GpC_mds_data
 mofa_umap_data <- GpC_mofaumap_data
 
 #pca
-pca_coords <- pca_data[,c(1,2)]
-pca_groups <- pca_data$Stage
-pca_dist <- dist(pca_coords)
-sil_pca <- silhouette(as.numeric(factor(pca_groups)), pca_dist)
-mean_sil_pca <- mean(sil_pca[, 3])
+mean_sil_pca <- SC_process(pca_data,method="PCA")
 cat("PCA平均轮廓系数:", round(mean_sil_pca, 3), "\n")
 
 
 #umap
-umap_coords <- umap_data[,c(1,2)]
-umap_groups <- umap_data$Stage
-umap_dist <- dist(umap_coords)
-sil_umap <- silhouette(as.numeric(factor(umap_groups)), umap_dist)
-mean_sil_umap <- mean(sil_umap[, 3])
+mean_sil_umap <- SC_process(umap_data,method="UMAP")
 cat("UMAP平均轮廓系数:", round(mean_sil_umap, 3), "\n")
 
 
 #mds
-mds_coords <- mds_data[,c(1,2)]
-mds_groups <- mds_data$Stage
-mds_dist <- dist(mds_coords)
-sil_mds <- silhouette(as.numeric(factor(mds_groups)), mds_dist)
-mean_sil_mds <- mean(sil_mds[, 3])
+mean_sil_mds <- SC_process(umap_data,method="MDS")
 cat("MDS平均轮廓系数:", round(mean_sil_mds, 3), "\n")
-
-
-#mofa umap
-mofaumap_coords <- mofa_umap_data[,c(1,2)]
-mofaumap_groups <- mofa_umap_data$group
-mofaumap_dist <- dist(mofaumap_coords)
-sil_mofaumap <- silhouette(as.numeric(factor(mofaumap_groups)), mofaumap_dist)
-mean_sil_mofaumap <- mean(sil_mofaumap[, 3])
-cat("UMAP平均轮廓系数:", round(mean_sil_mofaumap, 3), "\n")
-
 
 
 PCA_SC_data <- read_xlsx("SC.xlsx",sheet = "PCA")
 UMAP_SC_data <- read_xlsx("SC.xlsx",sheet = "UMAP")
 MDS_SC_data <- read_xlsx("SC.xlsx",sheet = "MDS")
-MOFAUMAP_SC_data <- read_xlsx("SC.xlsx",sheet = "MOFA")
 
 
 # 绘制柱状图并美化
@@ -494,28 +311,6 @@ ggplot(MDS_SC_data, aes(x = type, y = SC.value, fill = type)) +
     axis.ticks.y = element_line(color = "black")
   ) +
   ylim(min(MDS_SC_data$SC.value) - 0.1, max(MDS_SC_data$SC.value) + 0.1)  # 扩展y轴范围以显示数值标签
-
-ggplot(MOFAUMAP_SC_data, aes(x = type, y = SC.value, fill = type)) +
-  geom_bar(stat = "identity", width = 0.5, color = "black", alpha = 0.8) +  # 柱状图基础设置
-  geom_text(aes(label = round(SC.value, 3)), vjust = -0.5, size = 4, color = "black") +  # 添加数值标签
-  scale_fill_brewer(palette = "Set2") +  # 使用柔和配色
-  labs(
-    title = "Silhouette Coefficient MOFA",  # 标题
-    x = "",                                    # x = "Type",                                    # x轴标签
-    y = "Silhouette Coefficient Value"            # y轴标签
-    # caption = "Data Source: Silhouette_Coefficient.xlsx"  # 数据来源
-  ) +
-  theme_minimal() +  # 简洁主题
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 20),  # 标题 = 16),  # 标题居中加粗
-    axis.title = element_text(size = 15),             # 坐标轴标题大小
-    axis.text = element_text(size = 12,angle = 15),              # 坐标轴文字大小
-    legend.position = "none",                         # 隐藏图例（类别已在x轴显示）
-    panel.grid.major = element_blank(),               # 隐藏主要网格线
-    # panel.grid.minor = element_blank(),                # 隐藏次要网格线
-    axis.ticks.y = element_line(color = "black")
-  ) +
-  ylim(min(MOFAUMAP_SC_data$SC.value) - 0.1, max(MOFAUMAP_SC_data$SC.value) + 0.1)  # 扩展y轴范围以显示数值标签
 
 
 

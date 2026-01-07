@@ -170,39 +170,6 @@ DEG_diff_process <- function(CpG_DEG_file_data,GpC_DEG_file_data){
   return(DEG_data_union)
 }
 
-
-#' Dimensionality reduction processing
-#'
-#' @param file_data Enter level data
-#' @param method Dimension reduction methods
-#'
-#' @returns Dimension reduction results
-#' @export
-#'
-#' @examples
-DR_process <- function(file_data,method="MDS"){
-  if (method=="MDS") {
-    cor_matrix <- cor(file_data, use = "pairwise.complete.obs", method = "spearman")
-    # 将相关性转换为距离 (1 - correlation)
-    dist_matrix <- as.dist(1 - cor_matrix)
-    # 如果 dist_matrix 里有 NA，需要把 NA 替换为最大距离
-    dist_matrix[is.na(dist_matrix)] <- 1
-    # MDS 降维 (cmdscale)
-    mds_points <- cmdscale(dist_matrix, k = 2, eig = TRUE)
-    return(mds_points)
-  }else if (method=="PCA") {
-    pca_res <- prcomp(t(file_data),
-                      center = T,
-                      scale. = F,
-                      rank. = 30)
-    return(pca_res)
-  }else if (method=="UMAP") {
-    data_umap_res <- uwot::umap(file_data,n_neighbors=100,min_dist=0.5)
-    return(data_umap_res)
-  }
-}
-
-
 #' Calculate the silhouette coefficient
 #'
 #' @param file_data Dimensionality reduction data
