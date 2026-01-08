@@ -131,7 +131,7 @@ NA_padding_mean <- function(file_tmp,flag="row"){
     file_data_meth_mean <- rowMeans(file_data_meth_tmp,na.rm=T)
 
     pb <- txtProgressBar(min = 0, max = 100, style = 3)
-    cat("\n正在处理数据...\n")
+    cat("\ndata processing...\n")
 
     for (i in 1:nrow(file_data_meth_tmp)) {
       for (j in 1:ncol(file_data_meth_tmp)) {
@@ -149,7 +149,7 @@ NA_padding_mean <- function(file_tmp,flag="row"){
     file_data_meth_mean <- colMeans(file_data_meth_tmp,na.rm=T)
 
     pb <- txtProgressBar(min = 0, max = 100, style = 3)
-    cat("\n正在处理数据...\n")
+    cat("\ndata processing...\n")
 
     for (i in 1:ncol(file_data_meth_tmp)) {
       for (j in 1:nrow(file_data_meth_tmp)) {

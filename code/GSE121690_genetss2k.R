@@ -267,6 +267,7 @@ ggplot(PCA_SC_data, aes(x = type, y = SC.value, fill = type)) +
   ) +
   ylim(min(PCA_SC_data$SC.value) - 0.1, max(PCA_SC_data$SC.value) + 0.1)  # 扩展y轴范围以显示数值标签
 
+
 ggplot(UMAP_SC_data, aes(x = type, y = SC.value, fill = type)) +
   geom_bar(stat = "identity", width = 0.5, color = "black", alpha = 0.8) +  # 柱状图基础设置
   geom_text(aes(label = round(SC.value, 3)), vjust = -0.5, size = 4, color = "black") +  # 添加数值标签
@@ -288,6 +289,7 @@ ggplot(UMAP_SC_data, aes(x = type, y = SC.value, fill = type)) +
     axis.ticks.y = element_line(color = "black")
   ) +
   ylim(min(UMAP_SC_data$SC.value) - 0.1, max(UMAP_SC_data$SC.value) + 0.1)  # 扩展y轴范围以显示数值标签
+
 
 MDS_SC_data <- MDS_SC_data[c(-2,-1),]
 ggplot(MDS_SC_data, aes(x = type, y = SC.value, fill = type)) +

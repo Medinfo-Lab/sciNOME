@@ -7,11 +7,11 @@
 CreatRNAObject(file_data, min_cells = 50, min_features = 0)
 }
 \arguments{
+\item{file_data}{RNA Expression Matrix}
+
 \item{min_cells}{Include features detected in at least this many cells.}
 
 \item{min_features}{Include cells where at least this many features are detected}
-
-\item{filter_data}{RNA Expression Matrix}
 }
 \value{
 RNA object

@@ -4,12 +4,12 @@
 \alias{KNN_padding}
 \title{The NA value is populated by the KNN}
 \usage{
-KNN_padding(file_tmp, sample_cutoff = 0.8)
+KNN_padding(file_tmp, k_data = 10)
 }
 \arguments{
 \item{file_tmp}{Methlevel data of DNA methylation or chromatin accessibility}
 
-\item{sample_cutoff}{column cutoff}
+\item{k_data}{Number of neighbors to be used in the imputation (default=10)}
 }
 \value{
 After filling the matrix
