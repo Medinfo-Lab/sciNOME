@@ -7,7 +7,7 @@
 NA_padding_num_mean(file_tmp, num = 0.5, flag = "row")
 }
 \arguments{
-\item{file_tmp}{Methlevel data of DNA methylation or chromatin accessibility}
+\item{file_tmp}{level data of DNA methylation or chromatin accessibility}
 
 \item{num}{Enter the number to fill}
 

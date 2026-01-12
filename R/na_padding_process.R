@@ -1,6 +1,6 @@
 #' count the number of NAs in the ranks
 #'
-#' @param file_tmp Methlevel data of DNA methylation or chromatin accessibility
+#' @param file_tmp level data of DNA methylation or chromatin accessibility
 #' @param flag Choose to count by column or row
 #'
 #' @return statistical information
@@ -34,7 +34,7 @@ NA_count_order <- function(file_tmp,flag="row"){
 
 #' The NA value is populated by the specified value and by the average value
 #'
-#' @param file_tmp Methlevel data of DNA methylation or chromatin accessibility
+#' @param file_tmp level data of DNA methylation or chromatin accessibility
 #' @param flag Choose to count by column or row
 #' @param num Enter the number to fill
 #'
@@ -116,7 +116,7 @@ NA_padding_num_mean <- function(file_tmp,num=0.5,flag="row"){
 
 #' The NA value is populated by the average
 #'
-#' @param file_tmp Methlevel data of DNA methylation or chromatin accessibility
+#' @param file_tmp level data of DNA methylation or chromatin accessibility
 #'
 #' @return After filling the matrix
 #' @export
@@ -164,7 +164,7 @@ NA_padding_mean <- function(file_tmp,flag="row"){
 
 #' The NA value is populated by the KNN
 #'
-#' @param file_tmp Methlevel data of DNA methylation or chromatin accessibility
+#' @param file_tmp level data of DNA methylation or chromatin accessibility
 #' @param k_data 	Number of neighbors to be used in the imputation (default=10)
 #'
 #' @return After filling the matrix

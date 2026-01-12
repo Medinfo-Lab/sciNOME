@@ -8,7 +8,7 @@ Methlevel_group_variance_analysis(
   methlevel_data,
   group_data,
   group_suff = "group",
-  methlevel_group_suff = "methlevel",
+  methlevel_group_suff = "level",
   suff
 )
 }
@@ -19,7 +19,7 @@ Methlevel_group_variance_analysis(
 
 \item{group_suff}{grouping field}
 
-\item{methlevel_group_suff}{methlevel grouping field}
+\item{methlevel_group_suff}{level grouping field}
 
 \item{suff}{grouping suffix name}
 }

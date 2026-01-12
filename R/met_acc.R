@@ -25,16 +25,16 @@ Read_file_meth_colname <- function(file_tmp,string_data){
 #'
 #' @param cov_file site file name
 #' @param cov_file_data site data
-#' @param chr_data chromosome data
-#' @param region chromosomal physical fragment
-#' @param suffixname file extension
-#' @param datatmp select the meth or meth-level method
+#' @param region_data chromosome data
+#' @param chr_data chromosomal physical fragment
+#' @param suffixname_data file extension
+#' @param method_type select the Site or Level method
 #'
 #' @return DNA methylation or chromatin accessibility matrix
 #' @export
 #'
 #' @examples
-Coverage_to_data <- function(cov_file, cov_file_data, region_data, chr_data, suffixname_data=".cov.gz", type) {
+Coverage_to_data <- function(cov_file, cov_file_data, region_data, chr_data, suffixname_data=".cov.gz", method_type) {
   region_chr <- region_data %>% filter(chr %in% chr_data)
   cov_data <- cov_file_data
   colnames(cov_data) <- c("chr", "start", "end", "methlevel", "meth", "UNmeth")
@@ -44,11 +44,11 @@ Coverage_to_data <- function(cov_file, cov_file_data, region_data, chr_data, suf
     arrange(start,.by_group = T)
   suffixname <- paste0("\\",suffixname_data)
 
-  if(type=="meth"){
+  if(method_type=="Site"){
     # 生成列名
     cov_file_name <- basename(cov_file)
     split_result <- strsplit(cov_file_name, suffixname)[[1]][1]
-    col_names <- paste0(split_result, c(".meth", ".UNmeth"))
+    col_names <- paste0(split_result, c(".site", ".UNsite"))
 
     result_data <- data.frame()
 
@@ -82,11 +82,11 @@ Coverage_to_data <- function(cov_file, cov_file_data, region_data, chr_data, suf
     return(result_data)
   }
 
-  if(type=="methlevel"){
+  if(method_type=="Level"){
     # 生成列名
     cov_file_name <- basename(cov_file)
     split_result <- strsplit(cov_file_name, suffixname)[[1]][1]
-    col_names <- paste0(split_result, c(".site", ".methlevel"))
+    col_names <- paste0(split_result, c(".sites", ".level"))
 
     result_data <- data.frame()
 

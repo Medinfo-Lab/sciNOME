@@ -7,7 +7,7 @@
 KNN_padding(file_tmp, k_data = 10)
 }
 \arguments{
-\item{file_tmp}{Methlevel data of DNA methylation or chromatin accessibility}
+\item{file_tmp}{level data of DNA methylation or chromatin accessibility}
 
 \item{k_data}{Number of neighbors to be used in the imputation (default=10)}
 }

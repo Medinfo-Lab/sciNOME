@@ -7,7 +7,7 @@
 NA_padding_mean(file_tmp, flag = "row")
 }
 \arguments{
-\item{file_tmp}{Methlevel data of DNA methylation or chromatin accessibility}
+\item{file_tmp}{level data of DNA methylation or chromatin accessibility}
 }
 \value{
 After filling the matrix

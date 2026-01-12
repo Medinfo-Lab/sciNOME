@@ -14,7 +14,7 @@ CreatRNAObject <- function(file_data,min_cells=50,min_features=0){
 
   RNA_pbmc <- NormalizeData(RNA_pbmc, normalization.method = "LogNormalize")
   RNA_pbmc <- FindVariableFeatures(RNA_pbmc, selection.method = "vst", nfeatures = 2000)
-  RNA_pbmc <- VariableFeatures(RNA_pbmc)
+  RNA_pbmc_variableFeatures <- VariableFeatures(RNA_pbmc)
   RNA_pbmc <- ScaleData(RNA_pbmc,features = rownames(RNA_pbmc))
   return(RNA_pbmc)
 }

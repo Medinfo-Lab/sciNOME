@@ -31,15 +31,17 @@ Chr_region_process <- function(file_tmp,method){
 #' @param methlevel_data DNA methylation or chromatin accessibility methlevel data
 #' @param group_data DNA methylation or chromatin accessibility group data
 #' @param group_suff grouping field
-#' @param methlevel_group_suff methlevel grouping field
+#' @param methlevel_group_suff level grouping field
 #' @param suff grouping suffix name
 #'
 #' @return methlevel Difference analysis results
 #' @export
 #'
 #' @examples
-Methlevel_group_variance_analysis <- function(methlevel_data,group_data,group_suff="group",
-                                              methlevel_group_suff="methlevel",suff){
+Methlevel_group_variance_analysis <- function(methlevel_data,group_data,
+                                              group_suff="group",
+                                              methlevel_group_suff="level",
+                                              suff){
   group_methlevel <- group_data %>%
     filter(.data[[group_suff]] %in% suff)
   nogroup_methlevel <- group_data %>%
@@ -89,17 +91,18 @@ Methlevel_group_variance_analysis <- function(methlevel_data,group_data,group_su
 #' @param UNmeth_data DNA methylation or chromatin accessibility UNmeth data
 #' @param group_data DNA methylation or chromatin accessibility group data
 #' @param group_suff grouping field
-#' @param meth_title_suff meth grouping field
-#' @param UNmeth_title_suff UNmeth grouping field
+#' @param meth_title_suff site grouping field
+#' @param UNmeth_title_suff UNsite grouping field
 #' @param suff group suffix name
 #'
 #' @return meth differential data
 #' @export
 #'
 #' @examples
-Meth_group_variance_analysis <- function(meth_data,UNmeth_data,
-                                         group_data,group_suff="group",
-                                         meth_title_suff="meth",UNmeth_title_suff="UNmeth",
+Meth_group_variance_analysis <- function(meth_data,UNmeth_data,group_data,
+                                         group_suff="group",
+                                         meth_title_suff="site",
+                                         UNmeth_title_suff="UNsite",
                                          suff){
   group_sample <- group_data %>%
     filter(.data[[group_suff]] %in% suff)

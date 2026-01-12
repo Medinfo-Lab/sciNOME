@@ -7,7 +7,7 @@
 NA_count_order(file_tmp, flag = "row")
 }
 \arguments{
-\item{file_tmp}{Methlevel data of DNA methylation or chromatin accessibility}
+\item{file_tmp}{level data of DNA methylation or chromatin accessibility}
 
 \item{flag}{Choose to count by column or row}
 }

@@ -10,7 +10,7 @@ Coverage_to_data(
   region_data,
   chr_data,
   suffixname_data = ".cov.gz",
-  type
+  method_type
 )
 }
 \arguments{
@@ -18,13 +18,13 @@ Coverage_to_data(
 
 \item{cov_file_data}{site data}
 
-\item{chr_data}{chromosome data}
+\item{region_data}{chromosome data}
 
-\item{region}{chromosomal physical fragment}
+\item{chr_data}{chromosomal physical fragment}
 
-\item{suffixname}{file extension}
+\item{suffixname_data}{file extension}
 
-\item{datatmp}{select the meth or meth-level method}
+\item{method_type}{select the Site or Level method}
 }
 \value{
 DNA methylation or chromatin accessibility matrix
