@@ -37,9 +37,9 @@ GSE121690_GpC_meth <- Read_file_meth_colname(GSE121690_GpC_meth_data,"site")
 GSE121690_GpC_UNmeth <- Read_file_meth_colname(GSE121690_GpC_meth_data,"UNsite")
 
 CpG_sample_title <- GSE121690_CpG_Epis_sample %>%
-  filter(methlevel %in% colnames(GSE121690_CpG_methlevel))
+  filter(level %in% colnames(GSE121690_CpG_methlevel))
 GpC_sample_title <- GSE121690_GpC_Epis_sample %>%
-  filter(methlevel %in% colnames(GSE121690_GpC_methlevel))
+  filter(level %in% colnames(GSE121690_GpC_methlevel))
 
 colnames(GSE121690_CpG_methlevel) <- CpG_sample_title$Sample_title
 colnames(GSE121690_GpC_methlevel) <- GpC_sample_title$Sample_title

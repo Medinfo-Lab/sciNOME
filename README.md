@@ -71,7 +71,7 @@ for (i in 1:length(merge_coverage)) {
   b <- data.frame()
   # Parallel processing of each chromosome using mclapply
   merge_list <- mclapply(chromosome_data, function(chr_tmp) {
-    merge_chr <- Coverage_to_data(merge_coverage[i], cov_data, chr_tmp, bed_data, suffixname, "Level")
+    merge_chr <- Coverage_to_data(merge_coverage[i], cov_data, bed_data, chr_data, suffixname, "Level")
     merge_name <- paste0("merge_", chr_tmp)
     return(list(merge_name = merge_chr))
   }, mc.cores = CPU_cores)  # Number of CPU cores used
@@ -96,7 +96,7 @@ for (i in 1:length(merge_coverage)) {
   b <- data.frame()
   # Parallel processing of each chromosome using mclapply
   merge_list <- mclapply(chromosome_data, function(chr_tmp) {
-    merge_chr <- Coverage_to_data(merge_coverage[i], cov_data, chr_tmp, bed_data, suffixname, "Site")
+    merge_chr <- Coverage_to_data(merge_coverage[i], cov_data, bed_data, chr_data, suffixname, "Site")
     merge_name <- paste0("merge_", chr_tmp)
     return(list(merge_name = merge_chr))
   }, mc.cores = CPU_cores)  # Number of CPU cores used
