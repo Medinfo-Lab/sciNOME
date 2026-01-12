@@ -3,14 +3,14 @@ library(readxl)
 library(sciNOME)
 
 
-load("data/Level_Data.RData")
-load("data/Site_Data.RData")
-load("data/List_Data.RData")
-load("data/Epi_Group_Data.RData")
+load("Level_Data.RData")
+load("Site_Data.RData")
+load("List_Data.RData")
+load("Epi_Group_Data.RData")
 
 
 
-#meth----
+#site----
 #CpG
 GSE121690_CpG_genetss2k_meth_data <- Read_file_meth_colname(GSE121690_CpG_genetss2k_meth,"site")
 GSE121690_CpG_encode_meth_data <- Read_file_meth_colname(GSE121690_CpG_enhancer_meth,"site")
@@ -26,7 +26,7 @@ GSE121690_GpC_genetss2k_UNmeth_data <- Read_file_meth_colname(GSE121690_GpC_gene
 GSE121690_GpC_encode_UNmeth_data <- Read_file_meth_colname(GSE121690_GpC_enhancer_meth,"UNsite")
 
 
-group_levels <- levels(factor(GSE121690_CpGgroup$Developmental_stage))
+group_levels <- levels(factor(GSE121690_CpG_Epis_sample$Developmental_stage))
 
 
 #CpG----
@@ -36,10 +36,10 @@ for (i in 1:length(group_levels)) {
 
   cat(group_suffix,"\n")
   cat("genetss2k ")
-  genetss2k_DEG_result <- Meth_group_variance_analysis(
+  genetss2k_DEG_result <- Site_group_variance_analysis(
     GSE121690_CpG_genetss2k_meth_data,
     GSE121690_CpG_genetss2k_UNmeth_data,
-    GSE121690_CpGgroup,
+    GSE121690_CpG_Epis_sample,
     "Developmental_stage","site","UNsite",
     group_suffix)
   genetss2k_DEG_data <- merge(genetss2k_DEG_result, genetss2k_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
@@ -52,10 +52,10 @@ for (i in 1:length(group_levels)) {
 
 
   cat("enhancer  ")
-  encode_DEG_result <- Meth_group_variance_analysis(
+  encode_DEG_result <- Site_group_variance_analysis(
     GSE121690_CpG_encode_meth_data,
     GSE121690_CpG_encode_UNmeth_data,
-    GSE121690_CpGgroup,
+    GSE121690_CpG_Epis_sample,
     "Developmental_stage","site","UNsite",
     group_suffix)
   encode_DEG_data <- merge(encode_DEG_result, encode_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
@@ -68,7 +68,7 @@ for (i in 1:length(group_levels)) {
   cat("The ",group_suffix," ", as.numeric((Sys.time() - start_time),units = "mins"), "mins\n")
 }
 
-
+group_levels <- levels(factor(GSE121690_GpC_Epis_sample$Developmental_stage))
 
 #GpC----
 for (i in 1:length(group_levels)) {
@@ -77,10 +77,10 @@ for (i in 1:length(group_levels)) {
 
   cat(group_suffix,"\n")
   cat("genetss2k ")
-  genetss2k_DEG_result <- Meth_group_variance_analysis(
+  genetss2k_DEG_result <- Site_group_variance_analysis(
     GSE121690_GpC_genetss2k_meth_data,
     GSE121690_GpC_genetss2k_UNmeth_data,
-    GSE121690_GpCgroup,
+    GSE121690_GpC_Epis_sample,
     "Developmental_stage","site","UNsite",
     group_suffix)
   genetss2k_DEG_data <- merge(genetss2k_DEG_result, genetss2k_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
@@ -93,10 +93,10 @@ for (i in 1:length(group_levels)) {
 
 
   cat("enhancer  ")
-  encode_DEG_result <- Meth_group_variance_analysis(
+  encode_DEG_result <- Site_group_variance_analysis(
     GSE121690_GpC_encode_meth_data,
     GSE121690_GpC_encode_UNmeth_data,
-    GSE121690_GpCgroup,
+    GSE121690_GpC_Epis_sample,
     "Developmental_stage","site","UNsite",
     group_suffix)
   encode_DEG_data <- merge(encode_DEG_result, encode_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
@@ -112,7 +112,7 @@ for (i in 1:length(group_levels)) {
 
 
 
-#methlevel----
+#level----
 #CpG
 GSE121690_CpG_genetss2k_methlevel_data <- Read_file_meth_colname(GSE121690_CpG_genetss2k_methlevel,"level")
 GSE121690_CpG_encode_methlevel_data <- Read_file_meth_colname(GSE121690_CpG_enhancer_methlevel,"level")
@@ -128,7 +128,7 @@ GSE121690_GpC_genetss2k_methlevel_data <- GSE121690_GpC_genetss2k_methlevel_data
 GSE121690_GpC_encode_methlevel_data <- GSE121690_GpC_encode_methlevel_data/100
 
 
-group_levels <- levels(factor(GSE121690_CpGgroup$Developmental_stage))
+group_levels <- levels(factor(GSE121690_CpG_Epis_sample$Developmental_stage))
 
 #CpG----
 for (i in 1:length(group_levels)) {
@@ -137,8 +137,8 @@ for (i in 1:length(group_levels)) {
 
   cat(group_suffix,"\n")
   cat("genetss2k ")
-  genetss2k_DEG_result <- Methlevel_group_variance_analysis(GSE121690_CpG_genetss2k_methlevel_data,GSE121690_CpGgroup,
-                                                            "Developmental_stage","level",group_suffix)
+  genetss2k_DEG_result <- Level_group_variance_analysis(GSE121690_CpG_genetss2k_methlevel_data,GSE121690_CpG_Epis_sample,
+                                                        "Developmental_stage","level",group_suffix)
   genetss2k_DEG_data <- merge(genetss2k_DEG_result, genetss2k_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
 
   genetss2k_file_suffix <- "data/methlevel_DEG/genetss2k/"
@@ -149,8 +149,8 @@ for (i in 1:length(group_levels)) {
 
 
   cat("enhancer  ")
-  encode_DEG_result <- Methlevel_group_variance_analysis(GSE121690_CpG_encode_methlevel_data,GSE121690_CpGgroup,
-                                                         "Developmental_stage","level",group_suffix)
+  encode_DEG_result <- Level_group_variance_analysis(GSE121690_CpG_encode_methlevel_data,GSE121690_CpG_Epis_sample,
+                                                     "Developmental_stage","level",group_suffix)
   encode_DEG_data <- merge(encode_DEG_result, encode_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
 
   encode_file_suffix <- "data/methlevel_DEG/enhancer/"
@@ -161,6 +161,7 @@ for (i in 1:length(group_levels)) {
   cat("The ",group_suffix," ", as.numeric((Sys.time() - start_time),units = "mins"), "mins\n")
 }
 
+group_levels <- levels(factor(GSE121690_GpC_Epis_sample$Developmental_stage))
 
 #GpC----
 for (i in 1:length(group_levels)) {
@@ -169,8 +170,8 @@ for (i in 1:length(group_levels)) {
 
   cat(group_suffix,"\n")
   cat("genetss2k ")
-  genetss2k_DEG_result <- Methlevel_group_variance_analysis(GSE121690_GpC_genetss2k_methlevel_data,GSE121690_GpCgroup,
-                                                            "Developmental_stage","level",group_suffix)
+  genetss2k_DEG_result <- Level_group_variance_analysis(GSE121690_GpC_genetss2k_methlevel_data,GSE121690_GpC_Epis_sample,
+                                                        "Developmental_stage","level",group_suffix)
   genetss2k_DEG_data <- merge(genetss2k_DEG_result, genetss2k_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
 
   genetss2k_file_suffix <- "data/methlevel_DEG/genetss2k/"
@@ -181,8 +182,8 @@ for (i in 1:length(group_levels)) {
 
 
   cat("enhancer  ")
-  encode_DEG_result <- Methlevel_group_variance_analysis(GSE121690_GpC_encode_methlevel_data,GSE121690_GpCgroup,
-                                                         "Developmental_stage","level",group_suffix)
+  encode_DEG_result <- Level_group_variance_analysis(GSE121690_GpC_encode_methlevel_data,GSE121690_GpC_Epis_sample,
+                                                     "Developmental_stage","level",group_suffix)
   encode_DEG_data <- merge(encode_DEG_result, encode_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
 
   encode_file_suffix <- "data/methlevel_DEG/enhancer/"
