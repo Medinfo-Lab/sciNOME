@@ -1,12 +1,12 @@
-fastp：version 0.23.4
+**fastp**：version 0.23.4
 
-STAR：version 2.7.5a_2020-06-29
+**STAR**：version 2.7.5a_2020-06-29
 
-featureCounts：version 2.0.1
+**featureCounts**：version 2.0.1
 
-bismark：version 0.24.2
+**bismark**：version 0.24.2
 
-bowtie2：version 2.3.5.1
+**bowtie2**：version 2.3.5.1
 
 # scRNA-seq
 
