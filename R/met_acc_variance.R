@@ -38,10 +38,16 @@ Chr_region_process <- function(file_tmp,method){
 #' @export
 #'
 #' @examples
-Methlevel_group_variance_analysis <- function(methlevel_data,group_data,
-                                              group_suff="group",
-                                              methlevel_group_suff="level",
-                                              suff){
+Level_group_variance_analysis <- function(methlevel_data,group_data,
+                                          group_suff="group",
+                                          methlevel_group_suff="level",
+                                          suff){
+  # methlevel_data <- GSE121690_CpG_genetss2k_methlevel_data
+  # group_data <- GSE121690_CpG_Epis_sample
+  # group_suff="Developmental_stage"
+  # methlevel_group_suff="level"
+  # suff="E4.5"
+
   group_methlevel <- group_data %>%
     filter(.data[[group_suff]] %in% suff)
   nogroup_methlevel <- group_data %>%
@@ -75,7 +81,7 @@ Methlevel_group_variance_analysis <- function(methlevel_data,group_data,
     DEG_data$var_group[i] <- var(group_methlevel_data_clean_choose[i,],na.rm = T)
     DEG_data$var_nogroup[i] <- var(nogroup_methlevel_data_clean_choose[i,],na.rm = T)
     DEG_data$Diff[i] <- group_methlevel_data_clean_choose_rowmean[i]-nogroup_methlevel_data_clean_choose_rowmean[i]
-    DEG_data$Scores[i] <- DEG_data$Diff[i]/(1+sqrt((var(GSE121690_CpG_genebody_methlevel_preBII_clean_choose[i,],na.rm = T))^2+(var(GSE121690_CpG_genebody_methlevel_nopreBII_clean_choose[i,],na.rm = T))^2))
+    DEG_data$Scores[i] <- DEG_data$Diff[i]/(1+sqrt((DEG_data$var_group[i])^2+(DEG_data$var_nogroup[i])^2))
     DEG_data$FC[i] <- group_methlevel_data_clean_choose_rowmean[i]/nogroup_methlevel_data_clean_choose_rowmean[i]
     DEG_data$logFC[i] <- log2((group_methlevel_data_clean_choose_rowmean[i]+1)/
                                 (nogroup_methlevel_data_clean_choose_rowmean[i]+1))
@@ -99,11 +105,19 @@ Methlevel_group_variance_analysis <- function(methlevel_data,group_data,
 #' @export
 #'
 #' @examples
-Meth_group_variance_analysis <- function(meth_data,UNmeth_data,group_data,
+Site_group_variance_analysis <- function(meth_data,UNmeth_data,group_data,
                                          group_suff="group",
                                          meth_title_suff="site",
                                          UNmeth_title_suff="UNsite",
                                          suff){
+  # meth_data <- GSE121690_CpG_genetss2k_meth_data
+  # UNmeth_data <- GSE121690_CpG_genetss2k_UNmeth_data
+  # group_data <- GSE121690_CpG_Epis_sample
+  # group_suff="Developmental_stage"
+  # meth_title_suff="site"
+  # UNmeth_title_suff="UNsite"
+  # suff="E4.5"
+
   group_sample <- group_data %>%
     filter(.data[[group_suff]] %in% suff)
   no_group_sample <- group_data %>%
@@ -130,7 +144,7 @@ Meth_group_variance_analysis <- function(meth_data,UNmeth_data,group_data,
                  UNmeth_data_meth_control_sum[i],
                  UNmeth_data_UNmeth_control_sum[i]), nrow=2, ncol=2)
     p <- fisher.test(x)
-    fisher_data[i,1] <- p$p.value
+    fisher_data$p.value[i] <- p$p.value
   }
   fisher_data$adj_p.value_fdr <- p.adjust(fisher_data$p.value,method = "fdr")
   return(fisher_data)

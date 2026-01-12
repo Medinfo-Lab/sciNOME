@@ -11,7 +11,9 @@ DR_process(
   min_dist = 0.5,
   center = T,
   scale = T,
-  cor_method = "pearson"
+  cor_method = "pearson",
+  rank. = 30,
+  metric = "cosine"
 )
 }
 \arguments{
@@ -28,6 +30,10 @@ DR_process(
 \item{scale}{a logical value indicating whether the variables should be scaled to have unit variance before the analysis takes place}
 
 \item{cor_method}{a character string indicating which correlation coefficient (or covariance) is to be computed. One of "pearson" (default), "kendall", or "spearman": can be abbreviated.}
+
+\item{rank.}{optionally, a number specifying the maximal rank, i.e., maximal number of principal components to be used.}
+
+\item{metric}{Type of distance metric to use to find nearest neighbors}
 }
 \value{
 Dimensionality-Reduced Dataset

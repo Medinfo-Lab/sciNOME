@@ -9,13 +9,13 @@
 #'
 #' @examples
 CreatRNAObject <- function(file_data,min_cells=50,min_features=0){
-  RNA_pbmc <- CreateSeuratObject(counts = file_data,
+  RNA_pbmc <- Seurat::CreateSeuratObject(counts = file_data,
                                  min.cells = min_cells, min.features = min_features)
 
-  RNA_pbmc <- NormalizeData(RNA_pbmc, normalization.method = "LogNormalize")
-  RNA_pbmc <- FindVariableFeatures(RNA_pbmc, selection.method = "vst", nfeatures = 2000)
-  RNA_pbmc_variableFeatures <- VariableFeatures(RNA_pbmc)
-  RNA_pbmc <- ScaleData(RNA_pbmc,features = rownames(RNA_pbmc))
+  RNA_pbmc <- Seurat::NormalizeData(RNA_pbmc, normalization.method = "LogNormalize")
+  RNA_pbmc <- Seurat::FindVariableFeatures(RNA_pbmc, selection.method = "vst", nfeatures = 2000)
+  # RNA_pbmc_variableFeatures <- Seurat::VariableFeatures(RNA_pbmc)
+  RNA_pbmc <- Seurat::ScaleData(RNA_pbmc,features = rownames(RNA_pbmc))
   return(RNA_pbmc)
 }
 
@@ -29,15 +29,17 @@ CreatRNAObject <- function(file_data,min_cells=50,min_features=0){
 #' @param center a logical value indicating whether the variables should be shifted to be zero centered.
 #' @param scale a logical value indicating whether the variables should be scaled to have unit variance before the analysis takes place
 #' @param cor_method a character string indicating which correlation coefficient (or covariance) is to be computed. One of "pearson" (default), "kendall", or "spearman": can be abbreviated.
+#' @param rank. optionally, a number specifying the maximal rank, i.e., maximal number of principal components to be used.
+#' @param metric Type of distance metric to use to find nearest neighbors
 #'
 #' @returns Dimensionality-Reduced Dataset
 #' @export
 #'
 #' @examples
 DR_process <- function(file_data,method="RNA_UMAP",n_neighbors=100,min_dist=0.5,
-                       center=T,scale=T,cor_method="pearson"){
+                       center=T,scale=T,cor_method="pearson",rank.=30,metric="cosine"){
   if(method=="RNA_UMAP"){
-    umap_result <- uwot::umap(file_data,n_neighbors = n_neighbors, min_dist = min_dist, metric = "cosine")
+    umap_result <- uwot::umap(file_data,n_neighbors = n_neighbors, min_dist = min_dist, metric = metric)
     umap_df <- as.data.frame(umap_result)
     colnames(umap_df) <- c("UMAP1", "UMAP2")
     return(umap_df)
@@ -47,7 +49,7 @@ DR_process <- function(file_data,method="RNA_UMAP",n_neighbors=100,min_dist=0.5,
     colnames(umap_df) <- c("UMAP1", "UMAP2")
     return(umap_df)
   }else if (method=="PCA") {
-    pca_res <- stats::prcomp(file_data, center = center, scale. = center, rank. = 30)
+    pca_res <- stats::prcomp(file_data, center = center, scale. = center, rank. = rank.)
     var_explained <- pca_res$sdev^2 / sum(pca_res$sdev^2)
     pc1_lab <- paste0("PC1 (", round(var_explained[1] * 100, 1), "%)")
     pc2_lab <- paste0("PC2 (", round(var_explained[2] * 100, 1), "%)")

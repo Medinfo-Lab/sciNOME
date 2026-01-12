@@ -7,7 +7,7 @@
 #' @export
 #'
 #' @examples
-Read_file_meth_colname <- function(file_tmp,string_data){
+Read_file_colname <- function(file_tmp,string_data){
   file_data <- file_tmp
   string_tmp <- string_data
   string_col <- paste0("\\.",string_tmp)
@@ -124,20 +124,19 @@ Coverage_to_data <- function(cov_file, cov_file_data, region_data, chr_data, suf
 
 #' Methlevel quality control
 #'
-#' @param file_data
-#' @param sample_cutoff
+#' @param file_data Data requiring column quality control
+#' @param sample_cutoff Percentage of NA Values
 #'
-#' @returns
+#' @returns Data after quality control
 #' @export
 #'
 #' @examples
-QC_methlevel_data <- function(file_data,sample_cutoff=0.8){
+QC_data <- function(file_data,sample_cutoff=0.8){
   samples_keep <- colMeans(is.na(file_data)) < sample_cutoff
   CpG_data_clean <- file_data[, samples_keep]
 
   cat("After filtering the samples, the matrix dimensions:", dim(CpG_data_clean), "\n")
   cat("Number of excluded samples:", ncol(file_data) - ncol(CpG_data_clean), "\n")
-
   return(CpG_data_clean)
 }
 
