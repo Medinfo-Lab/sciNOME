@@ -3,33 +3,27 @@ library(readxl)
 library(sciNOME)
 
 
+load("data/Level_Data.RData")
+load("data/Site_Data.RData")
 load("data/List_Data.RData")
-load("data/Epi_Group.RData")
-load("data/Methlevel.RData")
-load("data/Meth.RData")
+load("data/Epi_Group_Data.RData")
 
 
 
 #meth----
-#CpG----
+#CpG
 GSE121690_CpG_genetss2k_meth_data <- Read_file_meth_colname(GSE121690_CpG_genetss2k_meth,"site")
-GSE121690_CpG_genebody_meth_data <- Read_file_meth_colname(GSE121690_CpG_genebody_meth,"site")
-GSE121690_CpG_encode_meth_data <- Read_file_meth_colname(GSE121690_CpG_encode_meth,"site")
+GSE121690_CpG_encode_meth_data <- Read_file_meth_colname(GSE121690_CpG_enhancer_meth,"site")
 
 GSE121690_CpG_genetss2k_UNmeth_data <- Read_file_meth_colname(GSE121690_CpG_genetss2k_meth,"UNsite")
-GSE121690_CpG_genebody_UNmeth_data <- Read_file_meth_colname(GSE121690_CpG_genebody_meth,"UNsite")
-GSE121690_CpG_encode_UNmeth_data <- Read_file_meth_colname(GSE121690_CpG_encode_meth,"UNsite")
+GSE121690_CpG_encode_UNmeth_data <- Read_file_meth_colname(GSE121690_CpG_enhancer_meth,"UNsite")
 
-
-
-#GpC----
+#GpC
 GSE121690_GpC_genetss2k_meth_data <- Read_file_meth_colname(GSE121690_GpC_genetss2k_meth,"site")
-GSE121690_GpC_genebody_meth_data <- Read_file_meth_colname(GSE121690_GpC_genebody_meth,"site")
-GSE121690_GpC_encode_meth_data <- Read_file_meth_colname(GSE121690_GpC_encode_meth,"site")
+GSE121690_GpC_encode_meth_data <- Read_file_meth_colname(GSE121690_GpC_enhancer_meth,"site")
 
 GSE121690_GpC_genetss2k_UNmeth_data <- Read_file_meth_colname(GSE121690_GpC_genetss2k_meth,"UNsite")
-GSE121690_GpC_genebody_UNmeth_data <- Read_file_meth_colname(GSE121690_GpC_genebody_meth,"UNsite")
-GSE121690_GpC_encode_UNmeth_data <- Read_file_meth_colname(GSE121690_GpC_encode_meth,"UNsite")
+GSE121690_GpC_encode_UNmeth_data <- Read_file_meth_colname(GSE121690_GpC_enhancer_meth,"UNsite")
 
 
 group_levels <- levels(factor(GSE121690_CpGgroup$Developmental_stage))
@@ -119,23 +113,18 @@ for (i in 1:length(group_levels)) {
 
 
 #methlevel----
-#CpG----
+#CpG
 GSE121690_CpG_genetss2k_methlevel_data <- Read_file_meth_colname(GSE121690_CpG_genetss2k_methlevel,"level")
-GSE121690_CpG_genebody_methlevel_data <- Read_file_meth_colname(GSE121690_CpG_genebody_methlevel,"level")
-GSE121690_CpG_encode_methlevel_data <- Read_file_meth_colname(GSE121690_CpG_encode_methlevel,"level")
+GSE121690_CpG_encode_methlevel_data <- Read_file_meth_colname(GSE121690_CpG_enhancer_methlevel,"level")
 
 GSE121690_CpG_genetss2k_methlevel_data <- GSE121690_CpG_genetss2k_methlevel_data/100
-GSE121690_CpG_genebody_methlevel_data <- GSE121690_CpG_genebody_methlevel_data/100
 GSE121690_CpG_encode_methlevel_data <- GSE121690_CpG_encode_methlevel_data/100
 
-
-#GpC----
+#GpC
 GSE121690_GpC_genetss2k_methlevel_data <- Read_file_meth_colname(GSE121690_GpC_genetss2k_methlevel,"level")
-GSE121690_GpC_genebody_methlevel_data <- Read_file_meth_colname(GSE121690_GpC_genebody_methlevel,"level")
-GSE121690_GpC_encode_methlevel_data <- Read_file_meth_colname(GSE121690_GpC_encode_methlevel,"level")
+GSE121690_GpC_encode_methlevel_data <- Read_file_meth_colname(GSE121690_GpC_enhancer_methlevel,"level")
 
 GSE121690_GpC_genetss2k_methlevel_data <- GSE121690_GpC_genetss2k_methlevel_data/100
-GSE121690_GpC_genebody_methlevel_data <- GSE121690_GpC_genebody_methlevel_data/100
 GSE121690_GpC_encode_methlevel_data <- GSE121690_GpC_encode_methlevel_data/100
 
 

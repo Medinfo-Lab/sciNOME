@@ -27,10 +27,27 @@ library(SNFtool)
 library(readr)
 
 
-load("data/multi_omics_sourcedata.RData")
+load("data/Epi_Group_Data.RData")
+load("data/Level_Data.RData")
+load("data/Site_Data.RData")
+load("data/List_Data.RData")
+load("data/RNA_Data.RData")
 
 
 #RNA----
+RNA_marker_data <- read.csv("data/RNA/GSE121650_markers_result.csv")
+GSE121650_pbmc <- CreatRNAObject(counts = GSE121650_RNA_data_counts_filter,
+                                 min.cells = 50, min.features = 0, project = "SmartSeq2_project")
+GSE121650_RNA_sample_seurat_group <- GSE121650_RNA_sample_data %>%
+  filter(Run %in% colnames(GSE121650_pbmc))
+GSE121650_pbmc <- AddMetaData(object = GSE121650_pbmc,
+                              metadata = GSE121650_RNA_sample_data$Developmental_stage,
+                              col.name = "group1")
+GSE121650_pbmc_counts <- GetAssayData(GSE121650_pbmc,slot = "data")
+GSE121650_pbmc_counts_frame <- as.data.frame(GSE121650_pbmc_counts)
+
+RNA_unique_groups <- unique(GSE121650_RNA_sample$Developmental_stage)
+
 #4.5
 RNA_marker_data_E4.5 <- RNA_marker_data %>%
   filter(cluster == "E4.5")

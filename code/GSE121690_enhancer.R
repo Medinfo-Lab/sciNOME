@@ -15,12 +15,39 @@ library(enrichplot)
 library(tidydr)
 library(uwot)
 library(impute)
-library(MOFA2)
 library(mixOmics)
 
 
-load("data/GSE121690_Epi_Enhancer_Dimensionality.RData")
+load("data/Level_Data.RData")
+load("data/Site_Data.RData")
+load("data/List_Data.RData")
+load("data/Epi_Group_Data.RData")
 
+
+GSE121690_CpG_meth_level_data <- GSE121690_CpG_enhancer_methlevel
+GSE121690_GpC_meth_level_data <- GSE121690_GpC_enhancer_methlevel
+GSE121690_CpG_meth_data <- GSE121690_CpG_enhancer_meth
+GSE121690_GpC_meth_data <- GSE121690_GpC_enhancer_meth
+
+GSE121690_CpG_methlevel <- Read_file_meth_colname(GSE121690_CpG_meth_level_data,"level")
+GSE121690_GpC_methlevel <- Read_file_meth_colname(GSE121690_GpC_meth_level_data,"level")
+GSE121690_CpG_meth <- Read_file_meth_colname(GSE121690_CpG_meth_data,"site")
+GSE121690_CpG_UNmeth <- Read_file_meth_colname(GSE121690_CpG_meth_data,"UNsite")
+GSE121690_GpC_meth <- Read_file_meth_colname(GSE121690_GpC_meth_data,"site")
+GSE121690_GpC_UNmeth <- Read_file_meth_colname(GSE121690_GpC_meth_data,"UNsite")
+
+CpG_sample_title <- GSE121690_CpG_Epis_sample %>%
+  filter(methlevel %in% colnames(GSE121690_CpG_methlevel))
+GpC_sample_title <- GSE121690_GpC_Epis_sample %>%
+  filter(methlevel %in% colnames(GSE121690_GpC_methlevel))
+
+colnames(GSE121690_CpG_methlevel) <- CpG_sample_title$Sample_title
+colnames(GSE121690_GpC_methlevel) <- GpC_sample_title$Sample_title
+
+colnames(GSE121690_CpG_meth) <- CpG_sample_title$Sample_title
+colnames(GSE121690_CpG_UNmeth) <- CpG_sample_title$Sample_title
+colnames(GSE121690_GpC_meth) <- GpC_sample_title$Sample_title
+colnames(GSE121690_GpC_UNmeth) <- GpC_sample_title$Sample_title
 
 #NA process----
 GSE121690_CpG_methlevel_na_count <- NA_count_order(GSE121690_CpG_methlevel)
@@ -310,55 +337,55 @@ ggplot(GSE121690_GpC_methlevel_choose_colmean,
 
 
 #DEG data process----
-CpG_meth_DEG_files <- list.files("data/meth_DEG/enhancer/",full.names = T,pattern = "\\CpG.csv*")
-GpC_meth_DEG_files <- list.files("data/meth_DEG/enhancer/",full.names = T,pattern = "\\GpC.csv*")
+CpG_enhancer_meth_DEG_files <- list.files("data/meth_DEG/enhancer/",full.names = T,pattern = "\\CpG.csv*")
+GpC_enhancer_meth_DEG_files <- list.files("data/meth_DEG/enhancer/",full.names = T,pattern = "\\GpC.csv*")
 
-CpG_methlevel_DEG_files <- list.files("data/methlevel_DEG/enhancer/",full.names = T,pattern = "\\CpG.csv*")
-GpC_methlevel_DEG_files <- list.files("data/methlevel_DEG/enhancer/",full.names = T,pattern = "\\GpC.csv*")
+CpG_enhancer_methlevel_DEG_files <- list.files("data/methlevel_DEG/enhancer/",full.names = T,pattern = "\\CpG.csv*")
+GpC_enhancer_methlevel_DEG_files <- list.files("data/methlevel_DEG/enhancer/",full.names = T,pattern = "\\GpC.csv*")
 
 #4.5
-CpG_meth_DEG_data <- read.csv(CpG_meth_DEG_files[1])
-GpC_meth_DEG_data <- read.csv(GpC_meth_DEG_files[1])
+CpG_enhancer_meth_DEG_data <- read.csv(CpG_enhancer_meth_DEG_files[1])
+GpC_enhancer_meth_DEG_data <- read.csv(GpC_enhancer_meth_DEG_files[1])
 
-CpG_methlevel_DEG_data <- read.csv(CpG_methlevel_DEG_files[1])
-GpC_methlevel_DEG_data <- read.csv(GpC_methlevel_DEG_files[1])
+CpG_enhancer_methlevel_DEG_data <- read.csv(CpG_enhancer_methlevel_DEG_files[1])
+GpC_enhancer_methlevel_DEG_data <- read.csv(GpC_enhancer_methlevel_DEG_files[1])
 
-E4.5_CpG_DEG_data <- merge(CpG_methlevel_DEG_data,CpG_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
-E4.5_GpC_DEG_data <- merge(GpC_methlevel_DEG_data,GpC_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
+E4.5_CpG_enhancer_DEG_data <- merge(CpG_enhancer_methlevel_DEG_data,CpG_enhancer_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
+E4.5_GpC_enhancer_DEG_data <- merge(GpC_enhancer_methlevel_DEG_data,GpC_enhancer_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
 
 #5.5
-CpG_meth_DEG_data <- read.csv(CpG_meth_DEG_files[2])
-GpC_meth_DEG_data <- read.csv(GpC_meth_DEG_files[2])
+CpG_enhancer_meth_DEG_data <- read.csv(CpG_enhancer_meth_DEG_files[2])
+GpC_enhancer_meth_DEG_data <- read.csv(GpC_enhancer_meth_DEG_files[2])
 
-CpG_methlevel_DEG_data <- read.csv(CpG_methlevel_DEG_files[2])
-GpC_methlevel_DEG_data <- read.csv(GpC_methlevel_DEG_files[2])
+CpG_enhancer_methlevel_DEG_data <- read.csv(CpG_enhancer_methlevel_DEG_files[2])
+GpC_enhancer_methlevel_DEG_data <- read.csv(GpC_enhancer_methlevel_DEG_files[2])
 
-E5.5_CpG_DEG_data <- merge(CpG_methlevel_DEG_data,CpG_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
-E5.5_GpC_DEG_data <- merge(GpC_methlevel_DEG_data,GpC_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
+E5.5_CpG_enhancer_DEG_data <- merge(CpG_enhancer_methlevel_DEG_data,CpG_enhancer_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
+E5.5_GpC_enhancer_DEG_data <- merge(GpC_enhancer_methlevel_DEG_data,GpC_enhancer_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
 
 #6.5
-CpG_meth_DEG_data <- read.csv(CpG_meth_DEG_files[3])
-GpC_meth_DEG_data <- read.csv(GpC_meth_DEG_files[3])
+CpG_enhancer_meth_DEG_data <- read.csv(CpG_enhancer_meth_DEG_files[3])
+GpC_enhancer_meth_DEG_data <- read.csv(GpC_enhancer_meth_DEG_files[3])
 
-CpG_methlevel_DEG_data <- read.csv(CpG_methlevel_DEG_files[3])
-GpC_methlevel_DEG_data <- read.csv(GpC_methlevel_DEG_files[3])
+CpG_enhancer_methlevel_DEG_data <- read.csv(CpG_enhancer_methlevel_DEG_files[3])
+GpC_enhancer_methlevel_DEG_data <- read.csv(GpC_enhancer_methlevel_DEG_files[3])
 
-E6.5_CpG_DEG_data <- merge(CpG_methlevel_DEG_data,CpG_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
-E6.5_GpC_DEG_data <- merge(GpC_methlevel_DEG_data,GpC_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
+E6.5_CpG_enhancer_DEG_data <- merge(CpG_enhancer_methlevel_DEG_data,CpG_enhancer_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
+E6.5_GpC_enhancer_DEG_data <- merge(GpC_enhancer_methlevel_DEG_data,GpC_enhancer_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
 
 #7.5
-CpG_meth_DEG_data <- read.csv(CpG_meth_DEG_files[4])
-GpC_meth_DEG_data <- read.csv(GpC_meth_DEG_files[4])
+CpG_enhancer_meth_DEG_data <- read.csv(CpG_enhancer_meth_DEG_files[4])
+GpC_enhancer_meth_DEG_data <- read.csv(GpC_enhancer_meth_DEG_files[4])
 
-CpG_methlevel_DEG_data <- read.csv(CpG_methlevel_DEG_files[4])
-GpC_methlevel_DEG_data <- read.csv(GpC_methlevel_DEG_files[4])
+CpG_enhancer_methlevel_DEG_data <- read.csv(CpG_enhancer_methlevel_DEG_files[4])
+GpC_enhancer_methlevel_DEG_data <- read.csv(GpC_enhancer_methlevel_DEG_files[4])
 
-E7.5_CpG_DEG_data <- merge(CpG_methlevel_DEG_data,CpG_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
-E7.5_GpC_DEG_data <- merge(GpC_methlevel_DEG_data,GpC_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
+E7.5_CpG_enhancer_DEG_data <- merge(CpG_enhancer_methlevel_DEG_data,CpG_enhancer_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
+E7.5_GpC_enhancer_DEG_data <- merge(GpC_enhancer_methlevel_DEG_data,GpC_enhancer_meth_DEG_data,by.x = "chrdata",by.y = "chrdata",all.x = T)
 
 
 #CpG GpC volcano----
-E4.5_CpG_DEG_data_choose <- E4.5_CpG_DEG_data %>%
+E4.5_CpG_DEG_data_choose <- E4.5_CpG_enhancer_DEG_data %>%
   mutate(numeric_logFC = parse_number(logFC)) %>%
   filter(!is.na(numeric_logFC)) %>%
   filter(adj_p.value_fdr < 0.05)
@@ -411,13 +438,13 @@ ggplot(volcano_data, aes(x = numeric_logFC, y = log_pval, colour = direction)) +
 
 #CpG GpC DEG diff methlevel----
 #E4.5
-E4.5_CpG_DEG_data_choose <- E4.5_CpG_DEG_data %>%
+E4.5_CpG_DEG_data_choose <- E4.5_CpG_enhancer_DEG_data %>%
   mutate(numeric_logFC = parse_number(logFC)) %>%
   filter(!is.na(numeric_logFC)) %>%
   filter(adj_p.value_fdr < 1e-5)
   # slice_max(numeric_logFC, n = 25000)
 
-E4.5_GpC_DEG_data_choose <- E4.5_GpC_DEG_data %>%
+E4.5_GpC_DEG_data_choose <- E4.5_GpC_enhancer_DEG_data %>%
   mutate(numeric_logFC = parse_number(logFC)) %>%
   filter(!is.na(numeric_logFC)) %>%
   filter(adj_p.value_fdr < 1e-5)
@@ -484,12 +511,12 @@ ggplot(data = E4.5_DEG_data_union,mapping = aes(x = CpG.Diff, y = GpC.Diff))+
 
 
 #E5.5
-E5.5_CpG_DEG_data_choose <- E5.5_CpG_DEG_data %>%
+E5.5_CpG_DEG_data_choose <- E5.5_CpG_enhancer_DEG_data %>%
   mutate(numeric_logFC = parse_number(logFC)) %>%
   filter(!is.na(numeric_logFC)) %>%
   filter(adj_p.value_fdr < 1e-2)
 
-E5.5_GpC_DEG_data_choose <- E5.5_GpC_DEG_data %>%
+E5.5_GpC_DEG_data_choose <- E5.5_GpC_enhancer_DEG_data %>%
   mutate(numeric_logFC = parse_number(logFC)) %>%
   filter(!is.na(numeric_logFC)) %>%
   filter(adj_p.value_fdr < 1e-2)
@@ -555,12 +582,12 @@ ggplot(data = E5.5_DEG_data_union,mapping = aes(x = CpG.Diff, y = GpC.Diff))+
 
 
 #6.5
-E6.5_CpG_DEG_data_choose <- E6.5_CpG_DEG_data %>%
+E6.5_CpG_DEG_data_choose <- E6.5_CpG_enhancer_DEG_data %>%
   mutate(numeric_logFC = parse_number(logFC)) %>%
   filter(!is.na(numeric_logFC)) %>%
   filter(adj_p.value_fdr < 1e-2)
 
-E6.5_GpC_DEG_data_choose <- E6.5_GpC_DEG_data %>%
+E6.5_GpC_DEG_data_choose <- E6.5_GpC_enhancer_DEG_data %>%
   mutate(numeric_logFC = parse_number(logFC)) %>%
   filter(!is.na(numeric_logFC)) %>%
   filter(adj_p.value_fdr < 1e-2)
@@ -626,12 +653,12 @@ ggplot(data = E6.5_DEG_data_union,mapping = aes(x = CpG.Diff, y = GpC.Diff))+
 
 
 #7.5
-E7.5_CpG_DEG_data_choose <- E7.5_CpG_DEG_data %>%
+E7.5_CpG_DEG_data_choose <- E7.5_CpG_enhancer_DEG_data %>%
   mutate(numeric_logFC = parse_number(logFC)) %>%
   filter(!is.na(numeric_logFC)) %>%
   filter(adj_p.value_fdr < 1e-5)
 
-E7.5_GpC_DEG_data_choose <- E7.5_GpC_DEG_data %>%
+E7.5_GpC_DEG_data_choose <- E7.5_GpC_enhancer_DEG_data %>%
   mutate(numeric_logFC = parse_number(logFC)) %>%
   filter(!is.na(numeric_logFC)) %>%
   filter(adj_p.value_fdr < 1e-5)
