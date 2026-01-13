@@ -3,12 +3,12 @@ Type: Package
 Title: Unifying DNA Methylation, Chromatin Accessibility, and Transcriptome Profiling in Single-Cell Multi-Omics via Region-Centric Integration
 Version: 0.2.4
 Author: Medinfo-Lad
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Maintainer: Key Laboratory of Medical Big Data, Hebei <m18231838586@163.com>
+Description: sciNOME is a full-featured, user-friendly tool that provides an extensible open-source framework for profiling the epigenetic drivers of gene expression in single-cell studies.
 License: GPL-3
+Depends: R (>= 4.2.0)
 Encoding: UTF-8
-LazyData: true
+LazyData: false
 Imports: 
     dplyr (>= 1.1.0),
     GenomicRanges (>= 1.50.0),
