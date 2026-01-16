@@ -108,9 +108,9 @@ for (i in 1:length(merge_coverage)) {
   cat("File processing time:", round(Sys.time() - start_time, 1), "秒\n")
 }
 
-bed_data_paste_leveldata <- Read_file_meth_colname(bed_data_paste_Level,"level")
-bed_data_paste_sitedata <- Read_file_meth_colname(bed_data_paste_Site,"site")
-bed_data_paste_UNsitedata <- Read_file_meth_colname(bed_data_paste_Site,"UNsite")
+bed_data_paste_leveldata <- Read_file_colname(bed_data_paste_Level,"level")
+bed_data_paste_sitedata <- Read_file_colname(bed_data_paste_Site,"site")
+bed_data_paste_UNsitedata <- Read_file_colname(bed_data_paste_Site,"UNsite")
 
 group_levels <- levels(factor(group$Developmental_stage))
 
