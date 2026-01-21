@@ -29,11 +29,11 @@ R CMD INSTALL sciNOME-0.2.4.tar.gz
 
 **The Workflow:**
 
-![](https://imgur.com/MDUDUgm.png)
+![](https://imgur.com/tQcn3RL.png)
 
 **The Epigenomic Processing Flow:**
 
-![](https://imgur.com/zhteE4T.png)
+![](https://imgur.com/9B3kq6u.png)
 
 **The Transcriptomic Processing Flow:**
 
