@@ -127,9 +127,12 @@ E7.5_RNA_df_result <- data.frame(GeneID = rownames(avg_E7.5), Expression = avg_E
   left_join(GSE121650_RNA_data_gene, by = c("GeneID" = "Geneid"))
 
 
+
+
+
 #genetss2k----
-GSE121690_CpG_genetss2k_methlevel <- Read_file_colname(GSE121690_CpG_genetss2k_meth_level_data,"methlevel")
-GSE121690_GpC_genetss2k_methlevel <- Read_file_colname(GSE121690_GpC_genetss2k_meth_level_data,"methlevel")
+GSE121690_CpG_genetss2k_methlevel <- Read_file_colname(GSE121690_CpG_genetss2k_meth_level_data,"level")
+GSE121690_GpC_genetss2k_methlevel <- Read_file_colname(GSE121690_GpC_genetss2k_meth_level_data,"level")
 
 CpG_sample_title <- GSE121690_CpG_Epis_sample %>%
   filter(methlevel %in% colnames(GSE121690_CpG_genetss2k_methlevel))
@@ -707,8 +710,8 @@ ggpairs(E6.5_CpG_GpC_RNA_data,
 
 
 #enhancer----
-GSE121690_CpG_enhancer_methlevel <- Read_file_colname(GSE121690_CpG_enhancer_meth_level_data,"methlevel")
-GSE121690_GpC_enhancer_methlevel <- Read_file_colname(GSE121690_GpC_enhancer_meth_level_data,"methlevel")
+GSE121690_CpG_enhancer_methlevel <- Read_file_colname(GSE121690_CpG_enhancer_meth_level_data,"level")
+GSE121690_GpC_enhancer_methlevel <- Read_file_colname(GSE121690_GpC_enhancer_meth_level_data,"level")
 
 CpG_sample_title <- GSE121690_CpG_Epis_sample %>%
   filter(methlevel %in% colnames(GSE121690_CpG_enhancer_methlevel))
