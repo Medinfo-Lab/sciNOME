@@ -58,7 +58,7 @@ load("data/Epi_Group_Data.RData")
 
 CPU_cores <- 20
 
-#sites level
+#Level
 for (i in 1:length(merge_coverage)) {
   start_time <- Sys.time()
   lines <- readLines(merge_coverage[i], warn = FALSE)
@@ -83,7 +83,7 @@ for (i in 1:length(merge_coverage)) {
   cat("File processing time:", round(Sys.time() - start_time, 1), "秒\n")
 }
 
-#site UNsite
+#Site
 for (i in 1:length(merge_coverage)) {
   start_time <- Sys.time()
   lines <- readLines(merge_coverage[i], warn = FALSE)
@@ -110,7 +110,7 @@ for (i in 1:length(merge_coverage)) {
 
 bed_data_paste_leveldata <- Read_file_colname(bed_data_paste_Level,"level")
 bed_data_paste_sitedata <- Read_file_colname(bed_data_paste_Site,"site")
-bed_data_paste_UNsitedata <- Read_file_colname(bed_data_paste_Site,"UNsite")
+bed_data_paste_nonsitedata <- Read_file_colname(bed_data_paste_Site,"nonsite")
 
 group_levels <- levels(factor(group$Developmental_stage))
 
@@ -120,7 +120,7 @@ for(i in 1:length(group_levels)){
   level_DEG_data <- Level_group_variance_analysis(bed_data_paste_leveldata, Group_data,
                                                   "Developmental_stage", "level", group_suffix)
   level_DEG_data <- merge(level_DEG_data, list_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
-  site_DEG_data <- Site_group_variance_analysis(bed_data_paste_sitedata, bed_data_paste_UNsitedata, Group_data,
+  site_DEG_data <- Site_group_variance_analysis(bed_data_paste_sitedata, bed_data_paste_nonsitedata, Group_data,
                                                 "Developmental_stage", "site","UNsite", group_suffix)
   site_DEG_data <- merge(site_DEG_data, list_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
 }
