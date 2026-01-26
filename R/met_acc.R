@@ -48,7 +48,7 @@ Coverage_to_data <- function(cov_file, cov_file_data, region_data, chr_data, suf
     # 生成列名
     cov_file_name <- basename(cov_file)
     split_result <- strsplit(cov_file_name, suffixname)[[1]][1]
-    col_names <- paste0(split_result, c(".site", ".UNsite"))
+    col_names <- paste0(split_result, c(".site", ".nonsite"))
 
     result_data <- data.frame()
 
