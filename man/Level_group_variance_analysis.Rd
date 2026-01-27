@@ -2,7 +2,7 @@
 % Please edit documentation in R/met_acc_variance.R
 \name{Level_group_variance_analysis}
 \alias{Level_group_variance_analysis}
-\title{Methlevel group variance analysis}
+\title{level group variance analysis}
 \usage{
 Level_group_variance_analysis(
   methlevel_data,
@@ -27,5 +27,5 @@ Level_group_variance_analysis(
 methlevel Difference analysis results
 }
 \description{
-Methlevel group variance analysis
+level group variance analysis
 }

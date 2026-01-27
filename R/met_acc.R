@@ -35,91 +35,98 @@ Read_file_colname <- function(file_tmp,string_data){
 #'
 #' @examples
 Coverage_to_data <- function(cov_file, cov_file_data, region_data, chr_data, suffixname_data=".cov.gz", method_type) {
-  region_chr <- region_data %>% filter(chr %in% chr_data)
+  # 1. Data Preprocessing
+  # Add unique IDs to region_data to facilitate restoring order or establishing associations after aggregation.
+  region_target <- region_data %>%
+    filter(chr %in% chr_data) %>%
+    mutate(region_uid = paste(chr, start, end, sep = ":")) # Create a Unique Identifier
+
   cov_data <- cov_file_data
   colnames(cov_data) <- c("chr", "start", "end", "methlevel", "meth", "UNmeth")
-  cov_data_chr <- cov_data %>% filter(chr %in% chr_data)
-  cov_data_chr_order <- cov_data_chr %>%
-    group_by(chr) %>%
-    arrange(start,.by_group = T)
-  suffixname <- paste0("\\",suffixname_data)
 
-  if(method_type=="Site"){
-    # 生成列名
-    cov_file_name <- basename(cov_file)
-    split_result <- strsplit(cov_file_name, suffixname)[[1]][1]
+  # Pre-filter the required chromosomes to reduce subsequent data volume.
+  cov_data_filtered <- cov_data %>%
+    filter(chr %in% chr_data)
+
+  suffixname <- paste0("\\", suffixname_data)
+
+  # 2. Generate column names
+  cov_file_name <- basename(cov_file)
+  split_result <- strsplit(cov_file_name, suffixname)[[1]][1]
+
+  if (method_type == "Site") {
     col_names <- paste0(split_result, c(".site", ".nonsite"))
-
-    result_data <- data.frame()
-
-    # 使用向量化操作代替嵌套循环
-    for (i in 1:length(chr_data)) {
-      cov_data_chr_order_chr <- cov_data_chr_order %>%
-        filter(chr %in% chr_data[i])
-      region_chr_chr <- region_chr %>%
-        filter(chr %in% chr_data[i])
-
-      region_chr_paste <- sprintf("%s:%s-%s", region_chr_chr$chr, region_chr_chr$start, region_chr_chr$end)
-      region_chr_paste <- as.data.frame(region_chr_paste)
-      colnames(region_chr_paste) <- "chrdata"
-
-      df_meth <- data.frame(matrix(nrow = nrow(region_chr_paste), ncol = 2))
-      rownames(df_meth) <- region_chr_paste$chr
-      colnames(df_meth) <- col_names
-
-      for (j in 1:nrow(region_chr_chr)) {
-        # 使用向量化操作替代双重循环
-        # chr_match <- (cov_data_chr_order_chr$chr == region_chr_chr$chr[j])
-        start_match <- (cov_data_chr_order_chr$start >= region_chr_chr$start[j])
-        end_match <- (cov_data_chr_order_chr$start <= region_chr_chr$end[j])
-        valid <- start_match & end_match
-
-        df_meth[j, 1] <- sum(cov_data_chr_order_chr$meth[valid])
-        df_meth[j, 2] <- sum(cov_data_chr_order_chr$UNmeth[valid])
-      }
-      result_data <- rbind(result_data,df_meth)
-    }
-    return(result_data)
-  }
-
-  if(method_type=="Level"){
-    # 生成列名
-    cov_file_name <- basename(cov_file)
-    split_result <- strsplit(cov_file_name, suffixname)[[1]][1]
+  } else if (method_type == "Level") {
     col_names <- paste0(split_result, c(".sites", ".level"))
-
-    result_data <- data.frame()
-
-    # 使用向量化操作代替嵌套循环
-    for (i in 1:length(chr_data)) {
-      cov_data_chr_order_chr <- cov_data_chr_order %>%
-        filter(chr %in% chr_data[i])
-      region_chr_chr <- region_chr %>%
-        filter(chr %in% chr_data[i])
-
-      region_chr_paste <- sprintf("%s:%s-%s", region_chr_chr$chr, region_chr_chr$start, region_chr_chr$end)
-      region_chr_paste <- as.data.frame(region_chr_paste)
-      colnames(region_chr_paste) <- "chrdata"
-
-      df_methlevel <- data.frame(matrix(nrow = nrow(region_chr_paste), ncol = 2))
-      rownames(df_methlevel) <- region_chr_paste$chr
-      colnames(df_methlevel) <- col_names
-
-      for (j in 1:nrow(region_chr_chr)) {
-        # 过滤出当前 region_chr 相关的 cov_data_chr
-        filtered_cov_data <- cov_data_chr_order_chr[cov_data_chr_order_chr$start >= region_chr_chr$start[j] & cov_data_chr_order_chr$start <= region_chr_chr$end[j], ]
-
-        # 计算 site_count 和 methlevel_sum
-        site_count <- nrow(filtered_cov_data)
-        methlevel_sum <- ifelse(site_count > 0, mean(filtered_cov_data$methlevel), NA)
-
-        # 赋值到 df_meth
-        df_methlevel[j, ] <- c(site_count, methlevel_sum)
-      }
-      result_data <- rbind(result_data,df_methlevel)
-    }
-    return(result_data)
+  } else {
+    stop("Unknown method_type")
   }
+
+  # Initialize the results list
+  result_list <- list()
+
+  # 3. Process by chromosome cycle (to avoid memory overflow while leveraging dplyr's join for acceleration)
+  for (k in chr_data) {
+
+    # Retrieve region and locus data for the current chromosome
+    r_chr <- region_target %>% filter(chr == k)
+    c_chr <- cov_data_filtered %>% filter(chr == k)
+
+    if (nrow(r_chr) == 0) next
+
+    # Core Optimization: Replace loops with range joins
+    # Logic: Region.start <= Site.start AND Region.end >= Site.start
+    # Note: The site position in cov_data is determined by the ‘start’ column
+
+    # Left join: Retain all Regions, even if no matching Site is found.
+    # require dplyr >= 1.1.0
+    merged_data <- left_join(
+      r_chr,
+      c_chr,
+      by = join_by(chr == chr, start <= start, end >= start)
+    )
+
+    # 4. Perform aggregation calculations based on method_type
+    if (method_type == "Site") {
+      summary_df <- merged_data %>%
+        group_by(region_uid) %>%
+        summarise(
+          val1 = sum(meth, na.rm = TRUE),
+          val2 = sum(UNmeth, na.rm = TRUE),
+          .groups = "drop"
+        )
+    } else if (method_type == "Level") {
+      summary_df <- merged_data %>%
+        group_by(region_uid) %>%
+        summarise(
+          val1 = sum(!is.na(methlevel)),
+          # If no site is present, `mean` returns `NaN`. Here, it is treated as `NA` to maintain consistency with the original code logic.
+          val2 = ifelse(val1 > 0, mean(methlevel, na.rm = TRUE), NA),
+          .groups = "drop"
+        )
+    }
+
+    # Store the calculation results in a list
+    result_list[[k]] <- summary_df
+  }
+
+  # 5. Merge results and format
+  final_df <- bind_rows(result_list)
+
+  # Ensure the result order matches the input region_target
+  # Left join back to region_target to restore the original order and unmatched rows (though already handled above, this serves as a double safeguard)
+  final_output <- region_target %>%
+    select(region_uid) %>%
+    left_join(final_df, by = "region_uid")
+
+  # Set Row Names
+  # The rownames generated by the source code follow the format chr:start-end.
+  rownames(final_output) <- final_output$region_uid
+
+  # Set column names and remove auxiliary columns
+  final_output <- final_output %>% select(val1, val2)
+  colnames(final_output) <- col_names
+  return(final_output)
 }
 
 #' Methlevel quality control

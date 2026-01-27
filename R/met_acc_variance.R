@@ -26,7 +26,7 @@ Chr_region_process <- function(file_tmp,method){
 }
 
 
-#' Methlevel group variance analysis
+#' level group variance analysis
 #'
 #' @param methlevel_data DNA methylation or chromatin accessibility methlevel data
 #' @param group_data DNA methylation or chromatin accessibility group data
@@ -56,8 +56,10 @@ Level_group_variance_analysis <- function(methlevel_data,group_data,
   group_methlevel_data <- methlevel_data[,group_methlevel[[methlevel_group_suff]]]
   nogroup_methlevel_data <- methlevel_data[,nogroup_methlevel[[methlevel_group_suff]]]
 
-  group_methlevel_data_clean <- group_methlevel_data[!apply(is.na(group_methlevel_data), 1, all), ]
-  nogroup_methlevel_data_clean <- nogroup_methlevel_data[!apply(is.na(nogroup_methlevel_data), 1, all), ]
+  group_methlevel_data_clean <- group_methlevel_data %>%
+    filter(rowSums(!is.na(.)) >= 2)
+  nogroup_methlevel_data_clean <- nogroup_methlevel_data %>%
+    filter(rowSums(!is.na(.)) >= 2)
 
   rowname_ids <- intersect(rownames(group_methlevel_data_clean), rownames(nogroup_methlevel_data_clean))
 
@@ -91,7 +93,7 @@ Level_group_variance_analysis <- function(methlevel_data,group_data,
 }
 
 
-#' Meth group variance analysis
+#' Site group variance analysis
 #'
 #' @param meth_data DNA methylation or chromatin accessibility meth data
 #' @param UNmeth_data DNA methylation or chromatin accessibility UNmeth data
@@ -108,7 +110,7 @@ Level_group_variance_analysis <- function(methlevel_data,group_data,
 Site_group_variance_analysis <- function(meth_data,UNmeth_data,group_data,
                                          group_suff="group",
                                          meth_title_suff="site",
-                                         UNmeth_title_suff="UNsite",
+                                         UNmeth_title_suff="nonsite",
                                          suff){
   # meth_data <- GSE121690_CpG_genetss2k_meth_data
   # UNmeth_data <- GSE121690_CpG_genetss2k_UNmeth_data

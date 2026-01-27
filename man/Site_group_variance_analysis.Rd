@@ -2,7 +2,7 @@
 % Please edit documentation in R/met_acc_variance.R
 \name{Site_group_variance_analysis}
 \alias{Site_group_variance_analysis}
-\title{Meth group variance analysis}
+\title{Site group variance analysis}
 \usage{
 Site_group_variance_analysis(
   meth_data,
@@ -10,7 +10,7 @@ Site_group_variance_analysis(
   group_data,
   group_suff = "group",
   meth_title_suff = "site",
-  UNmeth_title_suff = "UNsite",
+  UNmeth_title_suff = "nonsite",
   suff
 )
 }
@@ -33,5 +33,5 @@ Site_group_variance_analysis(
 meth differential data
 }
 \description{
-Meth group variance analysis
+Site group variance analysis
 }
