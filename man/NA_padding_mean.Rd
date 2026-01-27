@@ -8,6 +8,8 @@ NA_padding_mean(file_tmp, flag = "row")
 }
 \arguments{
 \item{file_tmp}{level data of DNA methylation or chromatin accessibility}
+
+\item{flag}{Select a column or row}
 }
 \value{
 After filling the matrix

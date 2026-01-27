@@ -64,7 +64,7 @@ NA_padding_num_mean <- function(file_tmp,num=0.5,flag="row"){
     # file_data_meth2 <- file_data_meth2[,-1]
 
     pb <- txtProgressBar(min = 0, max = 100, style = 3)
-    cat("\n正在处理数据...\n")
+    cat("\n Data Processing...\n")
 
     for (i in 1:nrow(file_data_meth2)) {
       for (j in 1:ncol(file_data_meth2)) {
@@ -98,7 +98,7 @@ NA_padding_num_mean <- function(file_tmp,num=0.5,flag="row"){
     # file_data_meth2 <- file_data_meth2[,-1]
 
     pb <- txtProgressBar(min = 0, max = 100, style = 3)
-    cat("\n正在处理数据...\n")
+    cat("\n Data Processing...\n")
 
     for (i in 1:ncol(file_data_meth2)) {
       for (j in 1:nrow(file_data_meth2)) {
@@ -117,6 +117,7 @@ NA_padding_num_mean <- function(file_tmp,num=0.5,flag="row"){
 #' The NA value is populated by the average
 #'
 #' @param file_tmp level data of DNA methylation or chromatin accessibility
+#' @param flag Select a column or row
 #'
 #' @return After filling the matrix
 #' @export
@@ -131,7 +132,7 @@ NA_padding_mean <- function(file_tmp,flag="row"){
     file_data_meth_mean <- rowMeans(file_data_meth_tmp,na.rm=T)
 
     pb <- txtProgressBar(min = 0, max = 100, style = 3)
-    cat("\ndata processing...\n")
+    cat("\n Data Processing...\n")
 
     for (i in 1:nrow(file_data_meth_tmp)) {
       for (j in 1:ncol(file_data_meth_tmp)) {
@@ -149,7 +150,7 @@ NA_padding_mean <- function(file_tmp,flag="row"){
     file_data_meth_mean <- colMeans(file_data_meth_tmp,na.rm=T)
 
     pb <- txtProgressBar(min = 0, max = 100, style = 3)
-    cat("\ndata processing...\n")
+    cat("\n Data Processing...\n")
 
     for (i in 1:ncol(file_data_meth_tmp)) {
       for (j in 1:nrow(file_data_meth_tmp)) {
