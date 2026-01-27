@@ -56,56 +56,87 @@ merge_coverage <- list.files(
 load("data/List_Data.RData")
 load("data/Epi_Group_Data.RData")
 
-CPU_cores <- 20
+bed_data_paste_Site <- sprintf("%s:%s-%s", bed_data$chr, bed_data$start, bed_data$end)
+bed_data_paste_Level <- sprintf("%s:%s-%s", bed_data$chr, bed_data$start, bed_data$end)
+
+bed_data_paste_Site <- as.data.frame(bed_data_paste_Site)
+colnames(bed_data_paste_Site) <- "chrdata"
+bed_data_paste_Level <- as.data.frame(bed_data_paste_Level)
+colnames(bed_data_paste_Level) <- "chrdata"
+
+# example chromosome data
+chr_data <- c("chr1","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17",
+              "chr18","chr19","chr2","chr20","chr21","chr22","chr3","chr4",
+              "chr5","chr6","chr7","chr8","chr9","chrM","chrX","chrY")
 
 #Level
 for (i in 1:length(merge_coverage)) {
   start_time <- Sys.time()
-  lines <- readLines(merge_coverage[i], warn = FALSE)
-  if (length(lines)<1) {
+  if (file.size(merge_CpG[i]) == 0) {
     message("Skip empty files: ", merge_coverage[i])
     next
   }
 
-  cov_data <- fread(merge_coverage[i])
-  b <- data.frame()
-  # Parallel processing of each chromosome using mclapply
-  merge_list <- mclapply(chromosome_data, function(chr_tmp) {
-    merge_chr <- Coverage_to_data(merge_coverage[i], cov_data, bed_data, chr_data, suffixname, "Level")
-    merge_name <- paste0("merge_", chr_tmp)
-    return(list(merge_name = merge_chr))
-  }, mc.cores = CPU_cores)  # Number of CPU cores used
+  cov_data <- fread(merge_CpG[i]) 
+  result_df <- tryCatch({
+    Coverage_to_data(
+      cov_file = merge_coverage[i],     # File path used for extracting sample names
+      cov_file_data = cov_data,         # Data content after reading
+      region_data = bed_data,    		# Region data
+      chr_data = chr_data,    			# All chromosome vectors requiring processing
+      suffixname_data = "suffixname",   # Suffix
+      method_type = "Level"             # The first letter must be capitalized, consistent with the function definition.
+    )
+  }, error = function(e) {
+    message("Error in file processing: ", merge_CpG[i], " - ", e$message)
+    return(NULL)
+  })
 
-  b <- do.call(rbind, lapply(merge_list, function(x) x$merge_name))
-  sample_name <- colnames(b)
-  bed_data_paste_Level[, sample_name] <- b[, sample_name]
-  cat(i,"bed data ",merge_coverage[i],'\n')
-  cat("File processing time:", round(Sys.time() - start_time, 1), "秒\n")
+  if (is.null(result_df)) next
+  new_cols <- colnames(result_df)
+  if (nrow(result_df) == nrow(bed_data_paste_Level)) {
+    bed_data_paste_Level[new_cols] <- result_df
+  } else {
+    warning(paste("Warning: Document", merge_coverage[i], "The number of processed rows does not match the target table; skip assignment."))
+  }
+
+  cat(i, "Bed Data Level Processed:", merge_coverage[i], '\n')
+  cat("Time:", round(difftime(Sys.time(), start_time, units = "secs"), 1), "second\n")
 }
 
 #Site
 for (i in 1:length(merge_coverage)) {
   start_time <- Sys.time()
-  lines <- readLines(merge_coverage[i], warn = FALSE)
-  if (length(lines)<1) {
+  if (file.size(merge_CpG[i]) == 0) {
     message("Skip empty files: ", merge_coverage[i])
     next
   }
 
-  cov_data <- fread(merge_coverage[i])
-  b <- data.frame()
-  # Parallel processing of each chromosome using mclapply
-  merge_list <- mclapply(chromosome_data, function(chr_tmp) {
-    merge_chr <- Coverage_to_data(merge_coverage[i], cov_data, bed_data, chr_data, suffixname, "Site")
-    merge_name <- paste0("merge_", chr_tmp)
-    return(list(merge_name = merge_chr))
-  }, mc.cores = CPU_cores)  # Number of CPU cores used
+  cov_data <- fread(merge_CpG[i]) 
+  result_df <- tryCatch({
+    Coverage_to_data(
+      cov_file = merge_coverage[i],     # File path used for extracting sample names
+      cov_file_data = cov_data,         # Data content after reading
+      region_data = bed_data,    		# Region data
+      chr_data = chr_data,    			# All chromosome vectors requiring processing
+      suffixname_data = "suffixname",   # Suffix
+      method_type = "Site"             # The first letter must be capitalized, consistent with the function definition.
+    )
+  }, error = function(e) {
+    message("Error in file processing: ", merge_coverage[i], " - ", e$message)
+    return(NULL)
+  })
 
-  b <- do.call(rbind, lapply(merge_list, function(x) x$merge_name))
-  sample_name <- colnames(b)
-  bed_data_paste_Site[, sample_name] <- b[, sample_name]
-  cat(i,"bed data ",merge_coverage[i],'\n')
-  cat("File processing time:", round(Sys.time() - start_time, 1), "秒\n")
+  if (is.null(result_df)) next
+  new_cols <- colnames(result_df)
+  if (nrow(result_df) == nrow(bed_data_paste_Site)) {
+    bed_data_paste_Site[new_cols] <- result_df
+  } else {
+    warning(paste("Warning: Document", merge_coverage[i], "The number of processed rows does not match the target table; skip assignment."))
+  }
+
+  cat(i, "Bed Data Site Processed:", merge_coverage[i], '\n')
+  cat("Time:", round(difftime(Sys.time(), start_time, units = "secs"), 1), "second\n")
 }
 
 bed_data_paste_leveldata <- Read_file_colname(bed_data_paste_Level,"level")
