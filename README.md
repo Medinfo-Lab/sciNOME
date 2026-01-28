@@ -15,7 +15,7 @@ install_github("Medinfo-Lab/sciNOME")
 
 If you prefer to build the package by hand, follow these steps:
 
-- Make sure that you have the dependencies from CRAN ("dplyr","reticulate","utils","MOFA","data.table")
+- Make sure that you have the dependencies from CRAN ("dplyr","reticulate","utils","data.table")
 
 - Download and build from source:
 
