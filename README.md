@@ -120,7 +120,7 @@ for (i in 1:length(merge_coverage)) {
       region_data = bed_data,    		# Region data
       chr_data = chr_data,    			# All chromosome vectors requiring processing
       suffixname_data = "suffixname",   # Suffix
-      method_type = "Site"             # The first letter must be capitalized, consistent with the function definition.
+      method_type = "Site"              # The first letter must be capitalized, consistent with the function definition.
     )
   }, error = function(e) {
     message("Error in file processing: ", merge_coverage[i], " - ", e$message)
