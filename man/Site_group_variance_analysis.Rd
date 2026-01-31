@@ -11,7 +11,8 @@ Site_group_variance_analysis(
   group_suff = "group",
   meth_title_suff = "site",
   UNmeth_title_suff = "nonsite",
-  suff
+  suff1,
+  suff2 = NULL
 )
 }
 \arguments{
@@ -27,7 +28,9 @@ Site_group_variance_analysis(
 
 \item{UNmeth_title_suff}{UNsite grouping field}
 
-\item{suff}{group suffix name}
+\item{suff1}{group suffix name1}
+
+\item{suff2}{group suffix name2}
 }
 \value{
 meth differential data

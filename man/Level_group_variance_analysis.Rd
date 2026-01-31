@@ -9,7 +9,8 @@ Level_group_variance_analysis(
   group_data,
   group_suff = "group",
   methlevel_group_suff = "level",
-  suff
+  suff1,
+  suff2 = NULL
 )
 }
 \arguments{
@@ -21,7 +22,9 @@ Level_group_variance_analysis(
 
 \item{methlevel_group_suff}{level grouping field}
 
-\item{suff}{grouping suffix name}
+\item{suff1}{grouping suffix name1}
+
+\item{suff2}{grouping suffix name2}
 }
 \value{
 methlevel Difference analysis results

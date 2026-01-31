@@ -32,7 +32,8 @@ Chr_region_process <- function(file_tmp,method){
 #' @param group_data DNA methylation or chromatin accessibility group data
 #' @param group_suff grouping field
 #' @param methlevel_group_suff level grouping field
-#' @param suff grouping suffix name
+#' @param suff1 grouping suffix name1
+#' @param suff2 grouping suffix name2
 #'
 #' @return methlevel Difference analysis results
 #' @export
@@ -41,7 +42,8 @@ Chr_region_process <- function(file_tmp,method){
 Level_group_variance_analysis <- function(methlevel_data,group_data,
                                           group_suff="group",
                                           methlevel_group_suff="level",
-                                          suff){
+                                          suff1,
+                                          suff2=NULL){
   # methlevel_data <- GSE121690_CpG_genetss2k_methlevel_data
   # group_data <- GSE121690_CpG_Epis_sample
   # group_suff="Developmental_stage"
@@ -49,9 +51,14 @@ Level_group_variance_analysis <- function(methlevel_data,group_data,
   # suff="E4.5"
 
   group_methlevel <- group_data %>%
-    filter(.data[[group_suff]] %in% suff)
-  nogroup_methlevel <- group_data %>%
-    filter(!.data[[group_suff]] %in% suff)
+    filter(.data[[group_suff]] %in% suff1)
+  if (is.null(suff2)) {
+    nogroup_methlevel <- group_data %>%
+      filter(!.data[[group_suff]] %in% suff1)
+  }else{
+    nogroup_methlevel <- group_data %>%
+      filter(.data[[group_suff]] %in% suff2)
+  }
 
   group_methlevel_data <- methlevel_data[,group_methlevel[[methlevel_group_suff]]]
   nogroup_methlevel_data <- methlevel_data[,nogroup_methlevel[[methlevel_group_suff]]]
@@ -101,7 +108,8 @@ Level_group_variance_analysis <- function(methlevel_data,group_data,
 #' @param group_suff grouping field
 #' @param meth_title_suff site grouping field
 #' @param UNmeth_title_suff UNsite grouping field
-#' @param suff group suffix name
+#' @param suff1 group suffix name1
+#' @param suff2 group suffix name2
 #'
 #' @return meth differential data
 #' @export
@@ -111,7 +119,8 @@ Site_group_variance_analysis <- function(meth_data,UNmeth_data,group_data,
                                          group_suff="group",
                                          meth_title_suff="site",
                                          UNmeth_title_suff="nonsite",
-                                         suff){
+                                         suff1,
+                                         suff2=NULL){
   # meth_data <- GSE121690_CpG_genetss2k_meth_data
   # UNmeth_data <- GSE121690_CpG_genetss2k_UNmeth_data
   # group_data <- GSE121690_CpG_Epis_sample
@@ -121,10 +130,14 @@ Site_group_variance_analysis <- function(meth_data,UNmeth_data,group_data,
   # suff="E4.5"
 
   group_sample <- group_data %>%
-    filter(.data[[group_suff]] %in% suff)
-  no_group_sample <- group_data %>%
-    filter(!.data[[group_suff]] %in% suff)
-
+    filter(.data[[group_suff]] %in% suff1)
+  if (is.null(suff2)) {
+    no_group_sample <- group_data %>%
+      filter(!.data[[group_suff]] %in% suff1)
+  }else{
+    no_group_sample <- group_data %>%
+      filter(.data[[group_suff]] %in% suff2)
+  }
 
   meth_data_meth_target <- meth_data[,group_sample[[meth_title_suff]]]
   UNmeth_data_UNmeth_target <- UNmeth_data[,group_sample[[UNmeth_title_suff]]]
