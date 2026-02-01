@@ -18,10 +18,10 @@ library(impute)
 library(mixOmics)
 
 
-load("data/Level_Data.RData")
-load("data/Site_Data.RData")
-load("data/List_Data.RData")
-load("data/Epi_Group_Data.RData")
+load("data/mouse/Level_Data.RData")
+load("data/mouse/Site_Data.RData")
+load("data/mouse/List_Data.RData")
+load("data/mouse/Epi_Group_Data.RData")
 
 
 GSE121690_CpG_meth_level_data <- GSE121690_CpG_enhancer_methlevel

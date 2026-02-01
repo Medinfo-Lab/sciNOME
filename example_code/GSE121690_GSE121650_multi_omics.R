@@ -27,11 +27,11 @@ library(SNFtool)
 library(readr)
 
 
-load("data/Epi_Group_Data.RData")
-load("data/Level_Data.RData")
-load("data/Site_Data.RData")
-load("data/List_Data.RData")
-load("data/RNA_Data.RData")
+load("data/mouse/Epi_Group_Data.RData")
+load("data/mouse/Level_Data.RData")
+load("data/mouse/Site_Data.RData")
+load("data/mouse/List_Data.RData")
+load("data/mouse/RNA_Data.RData")
 
 
 #RNA----

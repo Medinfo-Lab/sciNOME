@@ -16,7 +16,7 @@ library(circlize)
 
 
 
-load("data/RNA_Data.RData")
+load("data/mouse/RNA_Data.RData")
 
 
 #object----
