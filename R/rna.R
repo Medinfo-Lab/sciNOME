@@ -15,7 +15,7 @@ CreatRNAObject <- function(file_data,min_cells=50,min_features=0){
   RNA_pbmc <- Seurat::NormalizeData(RNA_pbmc, normalization.method = "LogNormalize")
   RNA_pbmc <- Seurat::FindVariableFeatures(RNA_pbmc, selection.method = "vst", nfeatures = 2000)
   # RNA_pbmc_variableFeatures <- Seurat::VariableFeatures(RNA_pbmc)
-  RNA_pbmc <- Seurat::ScaleData(RNA_pbmc,features = rownames(RNA_pbmc))
+  RNA_pbmc <- Seurat::ScaleData(RNA_pbmc)
   return(RNA_pbmc)
 }
 
