@@ -43,128 +43,81 @@ R CMD INSTALL sciNOME-0.99.0.tar.gz
 
 library(sciNOME)
 
-# First provide a coverage data, bed data, chromosome data and group data
-cov_directoryCpG <- "../scNOME_platform_ide/data/cov/hg19/CpG/"
-cov_directoryGpC <- "../scNOME_platform_ide/data/cov/hg19/GpC/"
-bed_path <- "../scNOME_platform_ide/data/cov/hg19/region/hg19_GRCh37_promoter_order50000.csv"
+# Step 1: Enter the path to the apparent group coverage file and the path to the region file, and read the transcriptome expression matrix
+cov_directoryCpG <- "../data/cov/hg19/CpG/"
+cov_directoryGpC <- "../data/cov/hg19/GpC/"
+bed_path <- "../data/region/bed.csv"
+region_data <- read.csv("../data/region/bed.csv")
+exper <- read.csv("../data/RNA_counts.csv")
+sample_data_all <- read.csv("../data/sample_data.csv")
 
+# Step 2: Generate aggregated apparent genomic data, and create transcriptomic objects
 result_matrixCpG <- aggregate_epi_regions(
   cov_dir = cov_directoryCpG,
   bed_file = bed_path,
   n_cores = 8
 )
-
 result_matrixGpC <- aggregate_epi_regions(
   cov_dir = cov_directoryGpC,
   bed_file = bed_path,
   n_cores = 8
 )
-merge_coverage <- list.files(
-  coverage_path,
-  full.names = TRUE,
-  pattern = "\\.cov.gz$"
+
+RNA_obj <- Build_RNAObject(
+  expr_mat = exper,        			# Expression Matrix
+  meta_data = sample_data_all,      # Grouped Data Frames
+  meta_id_col = "Sample_Geo",       # The columns in the grouped data are used to match the column names in the matrix
+  min_cells = 5,                    # (Optional) Remove genes that are completely non-expressed
+  min_features = 200,               # (Optional) Remove completely empty samples
+  project_name = "RNA_object"
 )
 
-load("data/List_Data.RData")
-load("data/Epi_Group_Data.RData")
+# Step 3: Filter the epigenomic aggregation data and the transcriptomic objects
+qc_result_matrixCpG <- QC_epiData(
+  data = result_matrixCpG,
+  top_n_rows = 5000,
+  max_col_na_ratio = 0.8
+)
+qc_result_matrixGpC <- QC_epiData(
+  data = result_matrixGpC,
+  top_n_rows = 5000,
+  max_col_na_ratio = 0.8
+)
 
-bed_data_paste_Site <- sprintf("%s:%s-%s", bed_data$chr, bed_data$start, bed_data$end)
-bed_data_paste_Level <- sprintf("%s:%s-%s", bed_data$chr, bed_data$start, bed_data$end)
+PlotQC_RNA(hg19_RNA_obj,"group1")
+RNA_obj <- ProcessQC_RNA(
+  obj = RNA_obj,
+  mt_pattern = "^MT-",          # Human mitochondrial prefix
+  min_nCount = 100,             # At least 100 UMI
+  max_nCount = 8000000,         # Up to 8,000,000 UMI
+  min_nFeature = 5000,          # Express at least 5,000 genes
+  max_nFeature = 12500,         # Up to 12,500 genes
+  max_mt = 10,                  # The proportion of mitochondria must not exceed 10%
+  norm_method = "LogNormalize", # Standardized Methods
+  do_scale = TRUE               # Whether to scale
+)
 
-bed_data_paste_Site <- as.data.frame(bed_data_paste_Site)
-colnames(bed_data_paste_Site) <- "chrdata"
-bed_data_paste_Level <- as.data.frame(bed_data_paste_Level)
-colnames(bed_data_paste_Level) <- "chrdata"
+# Step 3: Extract the level data for each sample
+qc_result_matrixCpG_level <- Extract_epiData(qc_result_matrixCpG,".level")
+qc_result_matrixGpC_level <- Extract_epiData(qc_result_matrixGpC,".level")
 
-# example chromosome data
-chr_data <- c("chr1","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17",
-              "chr18","chr19","chr2","chr20","chr21","chr22","chr3","chr4",
-              "chr5","chr6","chr7","chr8","chr9","chrM","chrX","chrY")
 
-#Level
-for (i in 1:length(merge_coverage)) {
-  start_time <- Sys.time()
-  if (file.size(merge_CpG[i]) == 0) {
-    message("Skip empty files: ", merge_coverage[i])
-    next
-  }
+# Step 4: Multi-omics data integration
+result_df <- Integrate_MultiOmics(
+  mode = "tri",                        # Integration mode
+  target_group = "AZA",                # Target group
+  meta_df = sample_data_all,           # Grouped Data Frames
+  group_col = "group1",                # Columns that define groups
+  region_df = region_data,             # Regional Information Table
+  rna_obj = RNA_obj,              	   # Transcriptomic objects
+  rna_id_col = "Sample_Geo_RNA",       # The column name containing the RNA groups
+  cpg_mat = qc_result_matrixCpG_level, # The level data for each CpG sample
+  cpg_id_col = "CpG_level",            # The column name containing the CpG groups CpG
+  gpc_mat = qc_result_matrixGpC_level, # The level data for each GpC sample
+  gpc_id_col = "GpC_level"             # The column name containing the CpG groups GpC
+)
 
-  cov_data <- fread(merge_CpG[i]) 
-  result_df <- tryCatch({
-    Coverage_to_data(
-      cov_file = merge_coverage[i],     # File path used for extracting sample names
-      cov_file_data = cov_data,         # Data content after reading
-      region_data = bed_data,    		# Region data
-      chr_data = chr_data,    			# All chromosome vectors requiring processing
-      suffixname_data = "suffixname",   # Suffix
-      method_type = "Level"             # The first letter must be capitalized, consistent with the function definition.
-    )
-  }, error = function(e) {
-    message("Error in file processing: ", merge_CpG[i], " - ", e$message)
-    return(NULL)
-  })
-
-  if (is.null(result_df)) next
-  new_cols <- colnames(result_df)
-  if (nrow(result_df) == nrow(bed_data_paste_Level)) {
-    bed_data_paste_Level[new_cols] <- result_df
-  } else {
-    warning(paste("Warning: Document", merge_coverage[i], "The number of processed rows does not match the target table; skip assignment."))
-  }
-
-  cat(i, "Bed Data Level Processed:", merge_coverage[i], '\n')
-  cat("Time:", round(difftime(Sys.time(), start_time, units = "secs"), 1), "second\n")
-}
-
-#Site
-for (i in 1:length(merge_coverage)) {
-  start_time <- Sys.time()
-  if (file.size(merge_CpG[i]) == 0) {
-    message("Skip empty files: ", merge_coverage[i])
-    next
-  }
-
-  cov_data <- fread(merge_CpG[i]) 
-  result_df <- tryCatch({
-    Coverage_to_data(
-      cov_file = merge_coverage[i],     # File path used for extracting sample names
-      cov_file_data = cov_data,         # Data content after reading
-      region_data = bed_data,    		# Region data
-      chr_data = chr_data,    			# All chromosome vectors requiring processing
-      suffixname_data = "suffixname",   # Suffix
-      method_type = "Site"              # The first letter must be capitalized, consistent with the function definition.
-    )
-  }, error = function(e) {
-    message("Error in file processing: ", merge_coverage[i], " - ", e$message)
-    return(NULL)
-  })
-
-  if (is.null(result_df)) next
-  new_cols <- colnames(result_df)
-  if (nrow(result_df) == nrow(bed_data_paste_Site)) {
-    bed_data_paste_Site[new_cols] <- result_df
-  } else {
-    warning(paste("Warning: Document", merge_coverage[i], "The number of processed rows does not match the target table; skip assignment."))
-  }
-
-  cat(i, "Bed Data Site Processed:", merge_coverage[i], '\n')
-  cat("Time:", round(difftime(Sys.time(), start_time, units = "secs"), 1), "second\n")
-}
-
-bed_data_paste_leveldata <- Read_file_colname(bed_data_paste_Level,"level")
-bed_data_paste_sitedata <- Read_file_colname(bed_data_paste_Site,"site")
-bed_data_paste_nonsitedata <- Read_file_colname(bed_data_paste_Site,"nonsite")
-
-group_levels <- levels(factor(group$Developmental_stage))
-
-for(i in 1:length(group_levels)){
-  group_suffix <- group_levels[i]
-  cat(group_suffix,"\n")
-  level_DEG_data <- Level_group_variance_analysis(bed_data_paste_leveldata, Group_data,
-                                                  "Developmental_stage", "level", group_suffix)
-  level_DEG_data <- merge(level_DEG_data, list_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
-  site_DEG_data <- Site_group_variance_analysis(bed_data_paste_sitedata, bed_data_paste_nonsitedata, Group_data,
-                                                "Developmental_stage", "site","UNsite", group_suffix)
-  site_DEG_data <- merge(site_DEG_data, list_data, by.x = "chrdata", by.y = "chrdata", all.x = TRUE)
-}
+# Step 5: Creating Multi-omics Statistical Plots
+PlotOmicsMatrix(result_df)
+PlotOmicsScatter(result_df)
 ```
