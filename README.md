@@ -22,7 +22,7 @@ If you prefer to build the package by hand, follow these steps:
 ```R
 git clone git@github.com:Medinfo-Lab/sciNOME.git
 R CMD build sciNOME
-R CMD INSTALL sciNOME-0.2.4.tar.gz
+R CMD INSTALL sciNOME-0.99.0.tar.gz
 ```
 
 # Usage
@@ -42,11 +42,23 @@ R CMD INSTALL sciNOME-0.2.4.tar.gz
 ```R
 
 library(sciNOME)
-library(dplyr)
-library(data.table)
-library(parallel)
 
-#First provide a coverage data, bed data, chromosome data and group data
+# First provide a coverage data, bed data, chromosome data and group data
+cov_directoryCpG <- "../scNOME_platform_ide/data/cov/hg19/CpG/"
+cov_directoryGpC <- "../scNOME_platform_ide/data/cov/hg19/GpC/"
+bed_path <- "../scNOME_platform_ide/data/cov/hg19/region/hg19_GRCh37_promoter_order50000.csv"
+
+result_matrixCpG <- aggregate_epi_regions(
+  cov_dir = cov_directoryCpG,
+  bed_file = bed_path,
+  n_cores = 8
+)
+
+result_matrixGpC <- aggregate_epi_regions(
+  cov_dir = cov_directoryGpC,
+  bed_file = bed_path,
+  n_cores = 8
+)
 merge_coverage <- list.files(
   coverage_path,
   full.names = TRUE,
