@@ -1,28 +1,61 @@
 Package: sciNOME
-Type: Package
-Title: Unifying DNA Methylation, Chromatin Accessibility, and Transcriptome Profiling in Single-Cell Multi-Omics via Region-Centric Integration
-Version: 0.2.4
-Authors@R: c(
-    person(
-      "Medinfo-Lad", "Shitao Zhou",
-      email = "m18231838586@163.com",
-      role = c("aut", "cre")
-    )
-  )
-Description: sciNOME is a full-featured, user-friendly tool that provides an extensible open-source framework for profiling the epigenetic drivers of gene expression in single-cell studies.
+Title: Region-Centric Integration for Single-Cell Multi-Omics
+Version: 0.99.0
+Authors@R: 
+    c(person(given = "Shitao",
+             family = "Zhou",
+             role = c("aut", "cre"),
+             email = "m18231838586@163.com",
+             comment = c(ORCID = "0000-0000-0000-0000")),
+      person(given = "Medinfo",
+             family = "Lab",
+             role = "fnd"))
+Description: Provides a full-featured, user-friendly, and extensible open-source 
+    framework for profiling the epigenetic drivers of gene expression in 
+    single-cell studies. It unifies DNA methylation, chromatin accessibility, 
+    and transcriptome profiling via region-centric integration.
 License: GPL-3
-Depends: R (>= 4.2.0)
-Encoding: UTF-8
-LazyData: true
+URL: https://github.com/medinfo_lab/sciNOME
+BugReports: https://github.com/medinfo_lab/sciNOME/issues
+biocViews: Software, SingleCell, Epigenetics, Transcriptomics, DNAMethylation, 
+    DifferentialExpression, DimensionReduction, Clustering
+Depends: 
+    R (>= 4.2.0)
 Imports: 
-    dplyr,
-    tidyr,
-    reticulate,
-    utils,
     data.table,
+    dplyr,
+    FNN,
+    GenomicRanges,
+    ggplot2,
+    ggpubr,
+    ggrepel,
+    ggridges,
+    igraph,
     impute,
-    uwot,
+    IRanges,
+    irlba,
+    magrittr,
+    Matrix,
+    methods,
+    NMF,
+    parallel,
+    patchwork,
+    pbapply,
+    princurve,
     Rtsne,
-    Seurat,
-    cluster
+    S4Vectors,
+    stats,
+    tidyr,
+    tidyselect,
+    tools,
+    utils,
+    uwot
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat,
+    BiocStyle
+VignetteBuilder: knitr
+Encoding: UTF-8
+LazyData: false
 RoxygenNote: 7.3.2

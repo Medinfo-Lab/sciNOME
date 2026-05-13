@@ -1,0 +1,144 @@
+---
+title: "1. Single-Cell RNA Analysis Pipeline"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{1. Single-Cell RNA Analysis Pipeline}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Introduction
+
+Welcome to the `sciNOME` single-cell RNA sequencing analysis pipeline. This vignette demonstrates a complete, step-by-step workflow from raw count matrices to advanced downstream analysis, including dimensionality reduction, clustering, differential expression, and trajectory inference.
+
+```{r setup, eval=FALSE}
+# Load the package
+library(sciNOME)
+```
+
+## 1. Data Preparation and Object Building
+
+The first step is to initialize the `RNA` object. The `sciNOME` package provides a powerful one-step wrapper function, `Build_RNAObject()`, which automatically handles matrix formatting, NA replacement, pre-filtering, and metadata integration.
+
+```{r build_object, eval=FALSE}
+# Assuming you have a raw counts matrix (genes x cells) and sample metadata
+# raw_counts <- read.csv("matrix.csv", row.names = 1)
+# meta_df <- read.csv("metadata.csv", row.names = 1)
+
+rna_obj <- Build_RNAObject(
+  expr_mat = raw_counts, 
+  meta_data = meta_df,
+  min_cells = 3,           # Keep genes expressed in at least 3 cells
+  min_features = 200,      # Keep cells with at least 200 detected genes
+  mt_pattern = "^MT-",     # Regex pattern for mitochondrial genes (e.g., human)
+  project_name = "Demo_RNA"
+)
+```
+
+## 2. Quality Control (QC) and Normalization
+
+Next, we filter out low-quality cells based on UMI counts, feature counts, and mitochondrial proportion. After filtering, `ProcessQC_RNA()` automatically performs sparse matrix normalization and scaling.
+
+```{r qc_norm, eval=FALSE}
+rna_obj <- ProcessQC_RNA(
+  obj = rna_obj,
+  mt_pattern = "^MT-",
+  min_nCount = 500,
+  max_nCount = 50000,
+  min_nFeature = 200,
+  max_nFeature = 8000,
+  max_mt = 15,                  # Filter out cells with >15% mitochondrial reads
+  norm_method = "LogNormalize", # Options: "LogNormalize", "LogCPM", or "TPM"
+  do_scale = TRUE               # Center and scale the data for PCA
+)
+```
+*Note: The filtered metadata and counts are stored in `filter_meta.data` and `filter_counts` safely without altering the raw input.*
+
+## 3. Dimensionality Reduction
+
+We then identify Highly Variable Genes (HVGs) and run Principal Component Analysis (PCA). The PCA coordinates are subsequently used to compute non-linear embeddings like t-SNE or UMAP.
+
+```{r dim_red, eval=FALSE}
+# 1. Run PCA (automatically calculates HVGs first)
+rna_obj <- RunDimReduction_RNA(
+  obj = rna_obj, 
+  method = "PCA", 
+  n_hvg = 2000, 
+  pca_rank = 50
+)
+
+# 2. Run UMAP using the first 20 Principal Components
+rna_obj <- RunDimReduction_RNA(
+  obj = rna_obj, 
+  method = "UMAP", 
+  use_dims = 1:20
+)
+```
+
+## 4. Cell Clustering
+
+With the embeddings calculated, we group cells into clusters. `sciNOME` supports Graph-based (KNN + Leiden) and Hierarchical clustering approaches.
+
+```{r clustering, eval=FALSE}
+rna_obj <- RunClustering_RNA(
+  obj = rna_obj,
+  reduction = "pca",       # Use PCA space for distance calculation
+  method = "graph",        # Graph-based Leiden clustering
+  use_dims = 1:20,         
+  cluster_res = 0.8,       # Resolution (higher = more clusters)
+  k_neighbors = 20
+)
+
+# The cluster labels are automatically saved in:
+# head(rna_obj$filter_meta.data$Auto_Cluster)
+```
+
+## 5. Differential Expression Analysis (DEA)
+
+To identify marker genes for specific clusters, we perform an ultra-fast Wilcoxon Rank Sum Test using `RunDEA_RNA()`.
+
+```{r dea, eval=FALSE}
+# Example: Find marker genes for "Cluster_1" compared to all other cells
+markers_cluster1 <- RunDEA_RNA(
+  obj = rna_obj,
+  layer_name = "data",
+  group_col = "Auto_Cluster",
+  ident_1 = "Cluster_1", 
+  ident_2 = NULL,          # NULL implies "Rest" (all other groups)
+  min_pct = 0.1,           # Minimum expression frequency
+  logfc_thresh = 0.25      # Minimum log2 Fold Change
+)
+
+# View top significant genes
+head(markers_cluster1)
+```
+
+## 6. Trajectory Inference (Pseudotime)
+
+Finally, to explore cellular development or differentiation pathways, `sciNOME` offers pseudotime estimation. You must specify the starting (root) cluster.
+
+```{r pseudotime, eval=FALSE}
+rna_obj <- RunPseudotime_RNA(
+  obj = rna_obj,
+  reduction = "umap",
+  group_col = "Auto_Cluster",
+  start_clus = "Cluster_1",   # Define the biological root of the trajectory
+  algorithm = "cluster"       # Options: "cluster" (Princurve) or "graph" (KNN shortest path)
+)
+
+# The pseudotime values are now merged into metadata:
+# head(rna_obj$filter_meta.data$Pseudotime)
+```
+
+## Next Steps
+
+Congratulations! You have successfully processed a single-cell RNA dataset. Proceed to the next vignettes to learn how to process Epigenetic data and integrate multiple omics layers!

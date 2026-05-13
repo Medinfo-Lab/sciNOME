@@ -1,0 +1,122 @@
+---
+title: "2. Epigenetic Analysis (CpG & GpC) Pipeline"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{2. Epigenetic Analysis (CpG & GpC) Pipeline}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Introduction
+
+Welcome to the `sciNOME` Epigenetic Analysis pipeline. This module is designed to process both DNA Methylation (CpG) and Chromatin Accessibility (GpC) data from single-cell or bulk bisulfite sequencing (e.g., Bismark outputs). 
+
+The workflow seamlessly guides you through genomic region aggregation, strict Quality Control (QC), missing value imputation, dimensionality reduction, and robust differential epigenetic analysis.
+
+```{r setup, eval=FALSE}
+# Load the package
+library(sciNOME)
+```
+
+## 1. Data Aggregation from Bismark Files
+
+The first step is to summarize base-resolution Bismark `.cov` (or `.cov.gz`) files into defined genomic regions (e.g., promoters, enhancers, or gene bodies) provided in a standard BED file.
+
+The `Aggregate_epiRegions()` function reads all files in a directory and aggregates the methylated counts, unmethylated counts, and methylation levels in parallel.
+
+```{r aggregate, eval=FALSE}
+# Define paths
+cov_directory <- "path/to/bismark_cov_files/"
+bed_file_path <- "path/to/genomic_regions.bed"
+
+# Run aggregation using 4 cores
+raw_epi_mat <- Aggregate_epiRegions(
+  cov_dir = cov_directory,
+  bed_file = bed_file_path,
+  n_cores = 4 
+)
+```
+
+## 2. Quality Control (QC) and Matrix Extraction
+
+Epigenetic matrices often contain missing values (NAs) due to low sequencing coverage. `sciNOME` provides a rigorous two-step QC method via `QC_epiData()`:
+1. Retains the top *N* genomic regions with the lowest NA rates.
+2. Removes samples with excessively high NA rates across these reliable regions.
+
+```{r qc, eval=FALSE}
+# Perform strict Two-Step QC
+qc_epi_mat <- QC_epiData(
+  data = raw_epi_mat,
+  top_n_rows = 5000,           # Keep the top 5000 highest-quality regions
+  max_col_na_ratio = 0.8       # Drop samples with >80% missing data
+)
+```
+
+Once QC is complete, you might want to extract only the methylation `.level` matrix for clustering or visualization.
+
+```{r extract, eval=FALSE}
+# Extract ONLY the methylation level matrix (values between 0 and 1)
+level_mat <- Extract_epiData(data = qc_epi_mat, suffix = ".level")
+```
+
+## 3. Dimensionality Reduction
+
+Visualizing epigenetic data requires handling missing values. `Reduce_epiDims()` performs smart fuzzy matching with your metadata, imputes NAs (via KNN or Mean), and runs advanced dimensionality reduction algorithms (PCA, UMAP, MDS, or NMF).
+
+```{r dimred, eval=FALSE}
+# Assuming you have a metadata data.frame mapping sample IDs to conditions
+# meta_df <- read.csv("metadata.csv")
+
+epi_umap <- Reduce_epiDims(
+  mat = level_mat,
+  meta = meta_df,
+  sample_col = "SampleID",
+  group_col = "Condition",
+  dr_method = "UMAP",          # Options: "PCA", "UMAP", "MDS", "NMF"
+  impute_method = "knn",       # Advanced KNN imputation for missing values
+  knn_k = 10
+)
+
+# The result is a data.frame ready for ggplot2 visualization
+# head(epi_umap)
+```
+
+## 4. Differential Epigenetic Analysis
+
+To find Differentially Methylated/Accessible Regions (DMRs/DARs), `Run_Diffanalysis()` uses an advanced statistical framework. It calculates variance and fold-change based on `.level` values, and performs **Fisher's Exact Test** using actual `.meth` and `.nonmeth` read counts for precise significance testing.
+
+```{r diff_analysis, eval=FALSE}
+# Example: Compare the "Disease" group against all other samples ("Rest")
+diff_results <- Run_Diffanalysis(
+  raw_mat = qc_epi_mat,          # Use the combined QC'd matrix (contains level, meth, nonmeth)
+  meta = meta_df,                # Global metadata
+  group_col = "Condition",       # Column defining the groups
+  target_group = "Disease",      # Experimental group
+  control_group = NULL,          # Set to NULL for "Target vs Rest", or specify a control like "Healthy"
+  
+  # Specify how your metadata maps to the matrix columns
+  col_level = "Level_Col",       
+  col_meth = "Meth_Col",
+  col_nonmeth = "Unmeth_Col",
+  
+  effect_metric = "Diff",        # Metric to define direction (Options: "Diff", "logFC", "Scores")
+  effect_th = 0.2,               # Minimum Absolute Difference threshold (e.g., 20% change)
+  p_th = 0.05                    # P-value threshold
+)
+
+# The output table automatically classifies regions into "Up-regulated" or "Down-regulated"
+# head(diff_results)
+```
+
+## Next Steps
+
+Now that you have successfully processed both RNA and Epigenetic layers independently, you are ready to explore the cross-talk between them. Proceed to the next vignette: **3. Multi-Omics Integration**.
