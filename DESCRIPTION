@@ -6,7 +6,7 @@ Authors@R:
              family = "Zhou",
              role = c("aut", "cre"),
              email = "m18231838586@163.com",
-             comment = c(ORCID = "0000-0000-0000-0000")),
+             comment = c(ORCID = "0009-0005-0386-8870")),
       person(given = "Medinfo",
              family = "Lab",
              role = "fnd"))
