@@ -7,22 +7,37 @@
 ***sciNOME*** is an R package for jointly analyzing transcriptomic, DNA methylation, and chromatin accessibility data. The package is designed to process sequencing data from scNOMe-seq and scRNA-seq experiments. Additionally, ***sciNOME*** converts sequencing data into region-based formats for efficient storage and subsequent analysis. The R package incorporates features such as differential analysis, dimensionality reduction analysis, and differential analysis of horizontal sites.
 
 ```R
-#install devtools if you don't have it already for easy installation
-install.packages("devtools")
-library(devtools)
-install_github("Medinfo-Lab/sciNOME")
+# From Bioconductor
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("sciNOME")
+
+# Development version from GitHub
+BiocManager::install("Medinfo-Lab/sciNOME")
 ```
 
 If you prefer to build the package by hand, follow these steps:
 
-- Make sure that you have the dependencies from CRAN ("dplyr","reticulate","utils","data.table")
+- Step 1: Download the package file
 
-- Download and build from source:
+Download the latest ***sciNOME*** release from our [GitHub Releases](https://github.com/Medinfo-Lab/sciNOME/releases) page to your local machine.
+
+- Step 2: Pre-install Dependencies
 
 ```R
-git clone git@github.com:Medinfo-Lab/sciNOME.git
-R CMD build sciNOME
-R CMD INSTALL sciNOME-0.99.0.tar.gz
+# Install prerequisite packages
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+
+deps <- c("data.table", "dplyr", "ggplot2", "ggpubr", "ggridges", "patchwork", 
+          "Matrix", "irlba", "Rtsne", "uwot", "parallel", "pbapply", "igraph", 
+          "FNN", "NMF", "princurve", "tidyr", "ggrepel", "GenomicRanges", 
+          "IRanges", "S4Vectors", "impute")
+```
+
+- Step 2.3: Install the Local Package
+
+```R
+install.packages("/path/to/your/download/sciNOME_latest.tar.gz", repos = NULL, type = "source")
 ```
 
 # Usage

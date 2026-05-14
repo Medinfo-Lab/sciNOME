@@ -15,8 +15,8 @@ Description: Region-Centric Integration for Single-Cell Multi-Omics.
     It features ultra-fast data aggregation, quality control, dimensionality reduction, and multi-omics integration. 
     Additionally, it offers extensive publication-ready visualization tools.
 License: GPL-3
-URL: https://github.com/medinfo_lab/sciNOME
-BugReports: https://github.com/medinfo_lab/sciNOME/issues
+URL: https://github.com/Medinfo-Lab/sciNOME
+BugReports: https://github.com/Medinfo-Lab/sciNOME/issues
 biocViews: Software, SingleCell, Epigenetics, Transcriptomics, DNAMethylation, 
     DifferentialExpression, DimensionReduction, Clustering
 Depends: 
