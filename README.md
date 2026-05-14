@@ -116,23 +116,51 @@ RNA_obj <- ProcessQC_RNA(
 qc_result_matrixCpG_level <- Extract_epiData(qc_result_matrixCpG,".level")
 qc_result_matrixGpC_level <- Extract_epiData(qc_result_matrixGpC,".level")
 
+# Step 4: RNA, DNA Methylation, Chromatin Accessibility 
+RNA_diff <- RunDEA_RNA(
+  obj = mm10_RNA_obj,
+  group_col = "group1",
+  ident_1 = "DAC"       
+  # ident_2 = "Unt"
+)
+CpG_diff <- Run_Diffanalysis(
+    raw_mat = qc_result_matrixCpG,
+    meta = sample_data_epiCpG,
+    group_col = "group1",
+    target_group = "AZA",
+    # control_group = "Unt",
+    col_level = "level",
+    col_meth = "meth",
+    col_nonmeth = "nonmeth")
+GpC_diff <- Run_Diffanalysis(
+    raw_mat = qc_result_matrixGpC,
+    meta = sample_data_all,
+    group_col = "group1",
+    target_group = "DAC",
+    # control_group = "Unt",
+    col_level = "level",
+    col_meth = "meth",
+    col_nonmeth = "nonmeth")
 
-# Step 4: Multi-omics data integration
+# Step 5: Multi-omics data integration
 result_df <- Integrate_MultiOmics(
   mode = "tri",                        # Integration mode
-  target_group = "AZA",                # Target group
+  target_group = "DAC",                # Target group
   meta_df = sample_data_all,           # Grouped Data Frames
   group_col = "group1",                # Columns that define groups
   region_df = region_data,             # Regional Information Table
   rna_obj = RNA_obj,              	   # Transcriptomic objects
   rna_id_col = "Sample_Geo_RNA",       # The column name containing the RNA groups
+  # rna_diff_df = RNA_diff,			   # RNA differential data 
   cpg_mat = qc_result_matrixCpG_level, # The level data for each CpG sample
   cpg_id_col = "CpG_level",            # The column name containing the CpG groups CpG
+  # cpg_diff_df = CpG_diff,			   # DNA methylation differential data 
   gpc_mat = qc_result_matrixGpC_level, # The level data for each GpC sample
   gpc_id_col = "GpC_level"             # The column name containing the CpG groups GpC
+  # gpc_diff_df = GpC_diff,            # Chromatin accessibility differential data 
 )
 
-# Step 5: Creating Multi-omics Statistical Plots
+# Step 6: Creating multi-omics statistical plots
 PlotOmicsMatrix(result_df)
 PlotOmicsScatter(result_df)
 ```
