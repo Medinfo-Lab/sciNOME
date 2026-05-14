@@ -35,8 +35,6 @@ library(ggplot2)
 # Ensure you have patchwork, ggridges, ggrepel, and ggpubr installed
 ```
 
----
-
 ## 1. Single-Cell RNA Visualization
 
 We first create a tiny mock `RNA` object.
@@ -112,8 +110,6 @@ if (requireNamespace("patchwork", quietly = TRUE)) {
 }
 ```
 
----
-
 ## 2. Epigenetic Visualization
 
 We simulate a small methylation `.level` matrix and its corresponding metadata.
@@ -168,8 +164,6 @@ if (requireNamespace("ggrepel", quietly = TRUE)) {
 }
 ```
 
----
-
 ## 3. Multi-Omics Integration Plots
 
 Finally, we simulate an integrated dataframe containing RNA Expression, CpG Methylation, and GpC Accessibility.
@@ -198,8 +192,6 @@ if (requireNamespace("ggpubr", quietly = TRUE) && requireNamespace("patchwork", 
   PlotOmicsScatter(mock_multi)
 }
 ```
-
----
 
 ## Session Information
 ```{r session-info}

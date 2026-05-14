@@ -89,8 +89,6 @@ rownames(gpc_mat) <- region_df$chrdata                # Matches region_df$chrdat
 colnames(gpc_mat) <- meta_df$GpC_Sample               # Matches meta_df$GpC_Sample
 ```
 
----
-
 ## 2. Multi-Omics Integration
 
 Now that our data is prepared and strictly aligned, we can demonstrate the various integration modes.
@@ -150,8 +148,6 @@ epi_merged <- Integrate_MultiOmics(
 
 knitr::kable(epi_merged, digits = 3)
 ```
-
----
 
 ## Session Information
 
