@@ -36,3 +36,28 @@ A sorted \code{data.frame} of DEA results containing p-values, adjusted p-values
 Extremely fast implementation of Wilcoxon Rank Sum Test for discovering differentially expressed genes between groups.
 Automatically handles 1-vs-1 or 1-vs-Rest comparisons.
 }
+\examples{
+# 1. Create mock data with simulated group differences
+set.seed(123)
+# Gene 1-5 will be highly expressed in Cell 1-10 (Cluster_A)
+mat_A <- matrix(rpois(100, lambda = 20), nrow = 10, ncol = 10)
+mat_B <- matrix(rpois(100, lambda = 1), nrow = 10, ncol = 10)
+mock_counts <- rbind(cbind(mat_A, mat_B), cbind(mat_B, mat_A))
+rownames(mock_counts) <- paste0("Gene_", 1:20)
+colnames(mock_counts) <- paste0("Cell_", 1:20)
+
+# 2. Build object and manually inject cluster labels for testing
+rna_obj <- Build_RNAObject(mock_counts, min_cells = 0, min_features = 0)
+rna_obj <- ProcessQC_RNA(rna_obj, min_nCount = 0, min_nFeature = 0, do_scale = FALSE)
+rna_obj$filter_meta.data$Auto_Cluster <- rep(c("Cluster_A", "Cluster_B"), each = 10)
+
+# 3. Run Differential Expression Analysis
+dea_res <- RunDEA_RNA(
+  obj = rna_obj,
+  group_col = "Auto_Cluster",
+  ident_1 = "Cluster_A",
+  ident_2 = "Cluster_B",
+  min_pct = 0, logfc_thresh = 0 # Relaxed for mock data
+)
+head(dea_res)
+}

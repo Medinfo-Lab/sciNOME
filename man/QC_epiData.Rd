@@ -40,3 +40,17 @@ Step 2: Using ONLY the selected top rows, calculates the NA ratio for each sampl
         Retains samples with an NA ratio strictly less than the specified threshold.
 Finally, it keeps the 'meth', 'nonmeth', and 'level' columns for all samples that passed the QC.
 }
+\examples{
+# Create mock data with NA values
+mock_qc_data <- data.frame(
+  region_id = c("reg1", "reg2", "reg3"),
+  # Sample 1 is perfect
+  S1.meth = c(10, 20, 30), S1.nonmeth = c(2, 4, 6), S1.level = c(0.8, 0.8, 0.8),
+  # Sample 2 has 100\% NAs (should be filtered out)
+  S2.meth = c(NA, NA, NA), S2.nonmeth = c(NA, NA, NA), S2.level = c(NA, NA, NA)
+)
+
+# Run QC (Require max 50\% NAs per column)
+qc_result <- QC_epiData(mock_qc_data, top_n_rows = 2, max_col_na_ratio = 0.5)
+head(qc_result)
+}

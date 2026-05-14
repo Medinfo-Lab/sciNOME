@@ -1,0 +1,207 @@
+---
+title: "Visualization Gallery in sciNOME"
+author: "Shitao Zhou"
+date: "`r Sys.Date()`"
+output: 
+  BiocStyle::html_document:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Visualization Gallery in sciNOME}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = TRUE,     # CRITICAL: Ensures all plots are generated during BiocCheck
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 8,
+  fig.height = 6
+)
+```
+
+## Introduction
+
+The `sciNOME` package provides an extensive suite of academic-grade plotting functions for Single-Cell RNA, Epigenetic, and Multi-Omics integrated data. 
+
+In this vignette, we demonstrate the usage of these functions using minimal mock datasets to ensure rapid compilation without relying on external large data files.
+
+```{r load-pkg}
+library(sciNOME)
+library(ggplot2)
+# Ensure you have patchwork, ggridges, ggrepel, and ggpubr installed
+```
+
+---
+
+## 1. Single-Cell RNA Visualization
+
+We first create a tiny mock `RNA` object.
+
+```{r rna-mock}
+set.seed(42)
+# Mock metadata
+mock_meta <- data.frame(
+  orig.ident = rep(c("Tumor", "Normal"), each = 20),
+  nFeature_RNA = runif(40, 200, 2500),
+  nCount_RNA = runif(40, 500, 8000),
+  percent_mt = runif(40, 0, 10),
+  Auto_Cluster = rep(c("C1", "C2", "C3", "C4"), each = 10)
+)
+rownames(mock_meta) <- paste0("Cell_", 1:40)
+
+# Mock UMAP coordinates
+mock_umap <- matrix(rnorm(80), ncol = 2)
+rownames(mock_umap) <- rownames(mock_meta)
+colnames(mock_umap) <- c("UMAP_1", "UMAP_2")
+
+# Mock Pseudotime
+mock_pt <- list(
+  pseudotime = runif(40, 0, 1),
+  dr_method = "umap",
+  group_col = "Auto_Cluster",
+  algorithm = "cluster",
+  start_clus = "C1",
+  curve_coords = data.frame(Dim1 = rnorm(40), Dim2 = rnorm(40))
+)
+
+# Assemble RNA object
+mock_rna_obj <- list(
+  meta.data = mock_meta,
+  filter_meta.data = mock_meta,
+  reductions = list(umap = mock_umap, pseudotime = mock_pt)
+)
+class(mock_rna_obj) <- "RNA"
+```
+
+### 1.1 Quality Control Plot
+```{r rna-qc}
+PlotQC_RNA(mock_rna_obj, group_col = "orig.ident")
+```
+
+### 1.2 Dimensionality Reduction Plot
+Set `show_cluster = TRUE` to plot custom groups alongside unsupervised clusters.
+```{r rna-dim}
+if (requireNamespace("patchwork", quietly = TRUE)) {
+  PlotDimRed_RNA(mock_rna_obj, reduction = "umap", group_col = "orig.ident", show_cluster = TRUE)
+}
+```
+
+### 1.3 Volcano Plot for DEA
+```{r rna-volcano}
+mock_dea <- data.frame(
+  gene = paste0("Gene_", 1:50),
+  avg_log2FC = rnorm(50, 0, 1.5),
+  p_val_adj = runif(50, 0, 0.1)
+)
+mock_dea$avg_log2FC[1:5] <- runif(5, 2, 4)
+mock_dea$p_val_adj[1:5] <- runif(5, 1e-6, 1e-3)
+
+if (requireNamespace("ggrepel", quietly = TRUE)) {
+  PlotVolcano_RNA(mock_dea, fc_cut = 1, p_cut = 0.05, top_n = 5)
+}
+```
+
+### 1.4 Trajectory & Pseudotime Plot
+```{r rna-pseudo}
+if (requireNamespace("patchwork", quietly = TRUE)) {
+  PlotPseudo_RNA(mock_rna_obj)
+}
+```
+
+---
+
+## 2. Epigenetic Visualization
+
+We simulate a small methylation `.level` matrix and its corresponding metadata.
+
+```{r epi-mock}
+set.seed(123)
+mock_epi_mat <- matrix(runif(200, min = 0, max = 1), nrow = 10, ncol = 20)
+colnames(mock_epi_mat) <- paste0("Sample_", 1:20)
+rownames(mock_epi_mat) <- paste0("Region_", 1:10)
+
+mock_epi_meta <- data.frame(
+  SampleID = paste0("Sample_", 1:20),
+  Condition = rep(c("Tumor", "Normal"), each = 10)
+)
+```
+
+### 2.1 Epigenetic Landscape (Ridge Plot)
+```{r epi-ridge}
+if (requireNamespace("ggridges", quietly = TRUE)) {
+  PlotLandscape_Epi(
+    mat = mock_epi_mat, 
+    meta = mock_epi_meta, 
+    sample_col = "SampleID", 
+    group_col = "Condition"
+  )
+}
+```
+
+### 2.2 Dimensionality Reduction for Epigenetics
+```{r epi-dim}
+mock_epi_dr <- data.frame(
+  Dim1 = rnorm(20), 
+  Dim2 = rnorm(20),
+  Condition = rep(c("Tumor", "Normal"), each = 10)
+)
+
+PlotDimRed_Epi(mock_epi_dr, group_col = "Condition", method = "PCA")
+```
+
+### 2.3 Epigenetic Volcano Plot
+```{r epi-volcano}
+mock_epi_dea <- data.frame(
+  chrdata = paste0("chr1:", 1001:1050),
+  Diff = rnorm(50, mean = 0, sd = 1),
+  P.Value = runif(50, min = 0, max = 0.5)
+)
+mock_epi_dea$Diff[1:3] <- c(1.5, 2.0, -1.8)
+mock_epi_dea$P.Value[1:3] <- c(0.001, 0.0005, 0.002)
+
+if (requireNamespace("ggrepel", quietly = TRUE)) {
+  PlotVolcano_Epi(mock_epi_dea, metric_col = "Diff", th_effect = 1.0, top_n = 3)
+}
+```
+
+---
+
+## 3. Multi-Omics Integration Plots
+
+Finally, we simulate an integrated dataframe containing RNA Expression, CpG Methylation, and GpC Accessibility.
+
+```{r multi-mock}
+set.seed(42)
+mock_multi <- data.frame(
+  RNA_Exp = rnorm(40, mean = 10, sd = 2),
+  CpG_level = runif(40, 0, 1),
+  GpC_level = runif(40, 0, 1)
+)
+# Add some artificial correlation
+mock_multi$RNA_Exp <- mock_multi$RNA_Exp - (mock_multi$CpG_level * 3)
+```
+
+### 3.1 Omics Correlation Matrix
+```{r multi-matrix, fig.width=10, fig.height=8}
+if (requireNamespace("patchwork", quietly = TRUE)) {
+  PlotOmicsMatrix(mock_multi, cor_method = "spearman")
+}
+```
+
+### 3.2 Pairwise Scatter Plots
+```{r multi-scatter, fig.width=12, fig.height=4}
+if (requireNamespace("ggpubr", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE)) {
+  PlotOmicsScatter(mock_multi)
+}
+```
+
+---
+
+## Session Information
+```{r session-info}
+sessionInfo()
+```

@@ -42,3 +42,23 @@ A \code{RNA} object after QC, filtering, and normalization.
 Performs mitochondrial proportion calculation, rigorous cell filtering,
 sparse matrix normalization (LogNormalize, LogCPM, or TPM), and optional data scaling.
 }
+\examples{
+# 1. Create mock data (include mock mitochondrial genes)
+set.seed(123)
+mock_counts <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+rownames(mock_counts) <- c("MT-ND1", "MT-ND2", paste0("Gene_", 3:10))
+colnames(mock_counts) <- paste0("Cell_", 1:10)
+
+# 2. Build basic object
+rna_obj <- Build_RNAObject(mock_counts, min_cells = 0, min_features = 0)
+
+# 3. Run QC and Normalization (use relaxed thresholds for mock data)
+rna_obj <- ProcessQC_RNA(
+  obj = rna_obj,
+  mt_pattern = "^MT-",
+  min_nCount = 0, min_nFeature = 0, max_mt = 100,
+  norm_method = "LogNormalize",
+  do_scale = FALSE # Keep false to save time in example
+)
+dim(rna_obj$assays$RNA$data)
+}

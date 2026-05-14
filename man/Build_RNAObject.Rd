@@ -39,3 +39,25 @@ A built and pre-filtered \code{RNA} object.
 One-step function to generate a RNA object directly from an expression matrix and a metadata data.frame.
 Automatically handles data cleaning, NA replacement, pre-filtering, and QC metrics calculation.
 }
+\examples{
+# 1. Create mock expression matrix and metadata
+set.seed(123)
+mock_counts <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+rownames(mock_counts) <- paste0("Gene_", 1:10)
+colnames(mock_counts) <- paste0("Cell_", 1:10)
+
+mock_meta <- data.frame(
+  ID = paste0("Cell_", 1:10),
+  Condition = rep(c("WT", "KO"), each = 5)
+)
+
+# 2. Build the object directly
+rna_obj <- Build_RNAObject(
+  expr_mat = mock_counts,
+  meta_data = mock_meta,
+  meta_id_col = "ID",
+  min_cells = 0, # Set to 0 for this tiny mock data
+  min_features = 0
+)
+head(rna_obj$meta.data)
+}

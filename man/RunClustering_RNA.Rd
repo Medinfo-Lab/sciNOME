@@ -35,3 +35,22 @@ A \code{RNA} object with \code{Auto_Cluster} added to its \code{filter_meta.data
 \description{
 Performs cell/sample clustering using either a Graph-based (Leiden) approach or Hierarchical clustering.
 }
+\examples{
+# 1. Prepare data and run dimensionality reduction
+set.seed(123)
+mock_counts <- matrix(rpois(400, lambda = 10), nrow = 20, ncol = 20)
+rownames(mock_counts) <- paste0("Gene_", 1:20)
+colnames(mock_counts) <- paste0("Cell_", 1:20)
+rna_obj <- Build_RNAObject(mock_counts, min_cells = 0, min_features = 0)
+rna_obj <- ProcessQC_RNA(rna_obj, min_nCount = 0, min_nFeature = 0, do_scale = FALSE)
+rna_obj <- RunDimReduction_RNA(rna_obj, method = "PCA", n_hvg = 15, pca_rank = 5)
+
+# 2. Run Clustering (Hierarchical is very fast and stable for tiny data)
+rna_obj <- RunClustering_RNA(
+  obj = rna_obj,
+  reduction = "pca",
+  method = "hierarchical",
+  cluster_k = 2
+)
+table(rna_obj$filter_meta.data$Auto_Cluster)
+}

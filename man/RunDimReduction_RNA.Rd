@@ -44,3 +44,21 @@ A \code{RNA} object with embedded coordinates.
 \description{
 Computes Highly Variable Genes (HVG) and performs PCA, t-SNE, or UMAP on the specified data layer.
 }
+\examples{
+# 1. Generate object and process QC
+set.seed(42)
+mock_counts <- matrix(rnbinom(400, mu = 10, size = 1), nrow = 20, ncol = 20)
+rownames(mock_counts) <- paste0("Gene_", 1:20)
+colnames(mock_counts) <- paste0("Cell_", 1:20)
+rna_obj <- Build_RNAObject(mock_counts, min_cells = 0, min_features = 0)
+rna_obj <- ProcessQC_RNA(rna_obj, min_nCount = 0, min_nFeature = 0, do_scale = FALSE)
+
+# 2. Run PCA dimensionality reduction
+rna_obj <- RunDimReduction_RNA(
+  obj = rna_obj,
+  method = "PCA",
+  n_hvg = 10,
+  pca_rank = 3 # Use small rank for tiny mock data
+)
+head(rna_obj$reductions$pca)
+}

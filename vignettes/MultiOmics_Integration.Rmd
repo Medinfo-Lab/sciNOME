@@ -1,16 +1,22 @@
 ---
-title: "3. Multi-Omics Integration Pipeline"
-output: rmarkdown::html_vignette
+title: "Multi-Omics Integration in sciNOME"
+author: "Shitao Zhou"
+date: "`r Sys.Date()`"
+output: 
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{3. Multi-Omics Integration Pipeline}
+  %\VignetteIndexEntry{Multi-Omics Integration in sciNOME}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
+  eval = TRUE,       # CRITICAL: Ensures code is executed during BiocCheck
   warning = FALSE,
   message = FALSE
 )
@@ -18,115 +24,137 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-Welcome to the pinnacle of the `sciNOME` workflow: **Multi-Omics Integration**. 
+The `sciNOME` package excels at Region-Centric Integration for Single-Cell Multi-Omics. The core function `Integrate_MultiOmics` allows users to seamlessly merge RNA expression, DNA methylation (CpG), and Chromatin accessibility (GpC) matrices using a global metadata mapping table.
 
-Integrating Single-Cell RNA (scRNA-seq), DNA Methylation (CpG), and Chromatin Accessibility (GpC) is inherently difficult due to mismatched sample names and different feature types (Genes vs. Genomic Regions). The `Integrate_MultiOmics()` function solves this by using a **Global Metadata Table** to safely map samples, and a **Region Annotation Table** to bridge genomic coordinates with Gene IDs.
+In this vignette, we simulate an ultra-lightweight multi-omics dataset to demonstrate the integration workflows rapidly.
 
-```{r setup, eval=FALSE}
-# Load the package
+```{r load-pkg}
 library(sciNOME)
+library(dplyr)
 ```
 
-## 1. Preparing the Bridge: Region Annotation
+## 1. Prepare Mock Multi-Omics Data
 
-To link epigenetic regions (e.g., `chr1:1000-2000`) to RNA expression (e.g., `ENSG000001`), we need a region annotation data.frame. It must contain the genomic coordinates and the associated gene.
+To successfully integrate multiple omics layers, three components must perfectly align: 
+1. The **Global Metadata** (linking sample names across omics).
+2. The **Region Dictionary** (linking genomic coordinates to Gene IDs).
+3. The **Expression/Methylation Matrices**.
 
-```{r prep_region, eval=FALSE}
-# Example of what the region_df should look like:
-# chr    start    end      gene_id           gene_name
-# chr1   14500    15500    ENSG00000223972   WASH7P
-# chr1   68500    70500    ENSG00000237613   FAM138A
-
-region_annotation <- read.csv("promoter_annotations.csv")
-```
-
-## 2. Basic TRI-Omics Integration
-
-If you want to merge all three omics layers (RNA, CpG, GpC) for a specific biological group to see the average multi-omics landscape per gene, use `mode = "tri"`.
-
-The algorithm automatically handles sample name mapping via `meta_df` and aggregates epigenetic region levels into gene-level averages.
-
-```{r basic_tri, eval=FALSE}
-# Merge all three layers for the "Disease" group
-multi_omics_df <- Integrate_MultiOmics(
-  mode = "tri",                 # Integrate all 3 omics
-  target_group = "Disease",     # The biological condition to extract
-  meta_df = global_meta,        # The master metadata linking all omics
-  group_col = "Condition",      # Column in global_meta containing 'Disease'
-  region_df = region_annotation,# The bridge table
-  
-  # 1. RNA info
-  rna_obj = rna_obj,            # The processed RNA object from Vignette 1
-  rna_id_col = "RNA_SampleID",  # Column in global_meta matching RNA cells
-  
-  # 2. CpG info
-  cpg_mat = cpg_level_mat,      # Matrix from Vignette 2
-  cpg_id_col = "CpG_SampleID",  # Column in global_meta matching CpG columns
-  
-  # 3. GpC info
-  gpc_mat = gpc_level_mat,      # Matrix from Vignette 2
-  gpc_id_col = "GpC_SampleID"   # Column in global_meta matching GpC columns
-)
-
-# Output contains GeneName, RNA_Exp, CpG_level, and GpC_level!
-head(multi_omics_df)
-```
-
-## 3. Dual-Omics Integration
-
-If you only have two omics layers, `sciNOME` seamlessly adapts using specific modes: `"rna_cpg"`, `"rna_gpc"`, or `"cpg_gpc"`.
-
-```{r dual_omics, eval=FALSE}
-# Example: Integrating only Epigenetic layers (Methylation & Accessibility)
-epi_integration <- Integrate_MultiOmics(
-  mode = "cpg_gpc",
-  target_group = "Healthy",
-  meta_df = global_meta,
-  group_col = "Condition",
-  region_df = region_annotation,
-  
-  cpg_mat = cpg_level_mat, cpg_id_col = "CpG_SampleID",
-  gpc_mat = gpc_level_mat, gpc_id_col = "GpC_SampleID"
+### 1.1 Global Metadata
+We simulate 4 cells/samples belonging to two biological conditions.
+```{r mock-meta}
+meta_df <- data.frame(
+  Condition = c("Tumor", "Tumor", "Normal", "Normal"),
+  RNA_Sample = c("rna_T1", "rna_T2", "rna_N1", "rna_N2"),
+  CpG_Sample = c("cpg_T1", "cpg_T2", "cpg_N1", "cpg_N2"),
+  GpC_Sample = c("gpc_T1", "gpc_T2", "gpc_N1", "gpc_N2"),
+  stringsAsFactors = FALSE
 )
 ```
 
-## 4. Advanced: Integration Driven by Differential Features
+### 1.2 Region Dictionary
+We simulate 3 genes and their corresponding promoter regions.
+```{r mock-region}
+region_df <- data.frame(
+  chr = c("chr1", "chr2", "chr3"),
+  start = c(1000, 3000, 5000),
+  end = c(2000, 4000, 6000),
+  gene_id = c("GENE_A", "GENE_B", "GENE_C"),
+  gene_name = c("Sym_A", "Sym_B", "Sym_C"),
+  stringsAsFactors = FALSE
+)
+# The function expects 'chrdata' format
+region_df$chrdata <- paste0(region_df$chr, ":", region_df$start, "-", region_df$end)
+```
 
-Often, you don't want to integrate the entire genome, but **only the features that are biologically significant** (e.g., DEGs, DMRs, DARs). 
+### 1.3 Simulate Omics Matrices
+```{r mock-matrices}
+set.seed(42)
 
-`Integrate_MultiOmics` has a powerful built-in feature: you can pass your differential analysis results directly into the function. It will automatically apply your thresholds and subset the matrices *before* integration.
+# 1. RNA Object (using the package's native Build_RNAObject)
+rna_counts <- matrix(runif(12, 10, 50), nrow = 3, ncol = 4)
+rownames(rna_counts) <- c("GENE_A", "GENE_B", "GENE_C") # Matches region_df$gene_id
+colnames(rna_counts) <- meta_df$RNA_Sample            # Matches meta_df$RNA_Sample
+rna_obj <- Build_RNAObject(rna_counts, min_cells = 0, min_features = 0)
+rna_obj$assays$RNA$data <- rna_obj$assays$RNA$counts  # Mock normalized data
 
-```{r advanced_diff, eval=FALSE}
-# Assuming you have differential results from RunDEA_RNA() and Run_Diffanalysis()
-integrated_sig_df <- Integrate_MultiOmics(
+# 2. CpG Matrix (Values 0-1)
+cpg_mat <- matrix(runif(12, 0.2, 0.8), nrow = 3, ncol = 4)
+rownames(cpg_mat) <- region_df$chrdata                # Matches region_df$chrdata
+colnames(cpg_mat) <- meta_df$CpG_Sample               # Matches meta_df$CpG_Sample
+
+# 3. GpC Matrix (Values 0-1)
+gpc_mat <- matrix(runif(12, 0.1, 0.9), nrow = 3, ncol = 4)
+rownames(gpc_mat) <- region_df$chrdata                # Matches region_df$chrdata
+colnames(gpc_mat) <- meta_df$GpC_Sample               # Matches meta_df$GpC_Sample
+```
+
+---
+
+## 2. Multi-Omics Integration
+
+Now that our data is prepared and strictly aligned, we can demonstrate the various integration modes.
+
+### Mode A: Tri-Omics Integration (RNA + CpG + GpC)
+Integrate all three layers for the "Tumor" group.
+
+```{r int-tri}
+tri_merged <- Integrate_MultiOmics(
   mode = "tri",
-  target_group = "Disease",
-  meta_df = global_meta,
+  target_group = "Tumor",
+  meta_df = meta_df,
   group_col = "Condition",
-  region_df = region_annotation,
+  region_df = region_df,
   
-  # RNA parameters with filtering
-  rna_obj = rna_obj, rna_id_col = "RNA_SampleID",
-  rna_diff_df = rna_deg_results,     # Pass RNA differential table
-  rna_pval_col = "p_val", rna_pval_th = 0.05,
-  rna_logfc_col = "avg_log2FC", rna_logfc_th = 0.25,
-  
-  # CpG parameters with filtering
-  cpg_mat = cpg_level_mat, cpg_id_col = "CpG_SampleID",
-  cpg_diff_df = cpg_dmr_results,     # Pass CpG differential table
-  cpg_pval_col = "P.Value", cpg_pval_th = 0.05,
-  cpg_diff_col = "Diff", cpg_diff_th = 0.15,
-  
-  # GpC parameters with filtering
-  gpc_mat = gpc_level_mat, gpc_id_col = "GpC_SampleID",
-  gpc_diff_df = gpc_dar_results,     # Pass GpC differential table
-  gpc_pval_col = "P.Value", gpc_pval_th = 0.05,
-  gpc_diff_col = "Diff", gpc_diff_th = 0.15
+  rna_obj = rna_obj, rna_id_col = "RNA_Sample",
+  cpg_mat = cpg_mat, cpg_id_col = "CpG_Sample",
+  gpc_mat = gpc_mat, gpc_id_col = "GpC_Sample"
 )
 
-# The result is a highly specific multi-omics dataset of ONLY the significant cross-talks.
+# View results (Genes mapped to their average RNA exp, CpG level, and GpC level)
+knitr::kable(tri_merged, digits = 3)
 ```
 
-## Conclusion
+### Mode B: Dual Integration (RNA + CpG)
+If you only have RNA and DNA methylation data, use `mode = "rna_cpg"`. Let's calculate for the "Normal" group.
 
-With `sciNOME`, you have now successfully built a comprehensive data structure, rigorously processed RNA and Epigenetic matrices, and unified them into a multi-omics landscape. You can now use the `integrated_sig_df` output for advanced downstream plotting (e.g., scatter plots correlating expression vs. methylation).
+```{r int-rna-cpg}
+rna_cpg_merged <- Integrate_MultiOmics(
+  mode = "rna_cpg",
+  target_group = "Normal",
+  meta_df = meta_df,
+  group_col = "Condition",
+  region_df = region_df,
+  
+  rna_obj = rna_obj, rna_id_col = "RNA_Sample",
+  cpg_mat = cpg_mat, cpg_id_col = "CpG_Sample"
+)
+
+knitr::kable(rna_cpg_merged, digits = 3)
+```
+
+### Mode C: Epigenetics Only Integration (CpG + GpC)
+If you only want to compare Methylation and Accessibility at the region level (without RNA).
+
+```{r int-cpg-gpc}
+epi_merged <- Integrate_MultiOmics(
+  mode = "cpg_gpc",
+  target_group = "Tumor",
+  meta_df = meta_df,
+  group_col = "Condition",
+  region_df = region_df,
+  
+  cpg_mat = cpg_mat, cpg_id_col = "CpG_Sample",
+  gpc_mat = gpc_mat, gpc_id_col = "GpC_Sample"
+)
+
+knitr::kable(epi_merged, digits = 3)
+```
+
+---
+
+## Session Information
+
+```{r session-info}
+sessionInfo()
+```

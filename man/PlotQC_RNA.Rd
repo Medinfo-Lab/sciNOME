@@ -24,3 +24,20 @@ A \code{ggplot} object representing the QC metrics violin plots.
 Generates a grouped violin plot for quality control metrics (e.g., nFeature_RNA, nCount_RNA, percent_mt)
 across specified cell groups. Automatically handles color interpolation for large numbers of groups.
 }
+\examples{
+# 1. Create a minimal mock RNA object with required meta.data
+mock_meta <- data.frame(
+  orig.ident = rep(c("Sample_A", "Sample_B"), each = 20),
+  nFeature_RNA = runif(40, min = 200, max = 2500),
+  nCount_RNA = runif(40, min = 500, max = 8000),
+  percent_mt = runif(40, min = 0, max = 15)
+)
+rownames(mock_meta) <- paste0("Cell_", 1:40)
+
+mock_obj <- list(meta.data = mock_meta)
+class(mock_obj) <- "RNA"
+
+# 2. Generate QC plot
+p_qc <- PlotQC_RNA(mock_obj, group_col = "orig.ident")
+p_qc
+}

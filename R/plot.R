@@ -12,6 +12,23 @@
 #' @importFrom tidyr pivot_longer
 #' @importFrom grDevices colorRampPalette
 #' @importFrom ggplot2 ggplot aes geom_violin geom_jitter facet_wrap theme_bw labs theme element_text element_rect element_blank margin scale_fill_manual
+#'
+#' @examples
+#' # 1. Create a minimal mock RNA object with required meta.data
+#' mock_meta <- data.frame(
+#'   orig.ident = rep(c("Sample_A", "Sample_B"), each = 20),
+#'   nFeature_RNA = runif(40, min = 200, max = 2500),
+#'   nCount_RNA = runif(40, min = 500, max = 8000),
+#'   percent_mt = runif(40, min = 0, max = 15)
+#' )
+#' rownames(mock_meta) <- paste0("Cell_", 1:40)
+#'
+#' mock_obj <- list(meta.data = mock_meta)
+#' class(mock_obj) <- "RNA"
+#'
+#' # 2. Generate QC plot
+#' p_qc <- PlotQC_RNA(mock_obj, group_col = "orig.ident")
+#' p_qc
 #' @export
 PlotQC_RNA <- function(obj,
                        group_col = NULL,
@@ -119,6 +136,29 @@ PlotQC_RNA <- function(obj,
 #'
 #' @importFrom grDevices colorRampPalette
 #' @importFrom ggplot2 ggplot aes geom_point scale_color_manual theme_classic labs theme element_text guides guide_legend
+#'
+#' @examples
+#' # 1. Create minimal mock RNA object with reductions and metadata
+#' set.seed(42)
+#' mock_umap <- matrix(rnorm(80), ncol = 2)
+#' rownames(mock_umap) <- paste0("Cell_", 1:40)
+#' colnames(mock_umap) <- c("UMAP_1", "UMAP_2")
+#'
+#' mock_meta <- data.frame(
+#'   orig.ident = rep(c("Control", "Treatment"), each = 20),
+#'   Auto_Cluster = rep(paste0("Cluster_", 1:4), times = 10)
+#' )
+#' rownames(mock_meta) <- rownames(mock_umap)
+#'
+#' mock_obj <- list(
+#'   reductions = list(umap = mock_umap),
+#'   meta.data = mock_meta
+#' )
+#' class(mock_obj) <- "RNA"
+#'
+#' # 2. Generate plot
+#' p_dim <- PlotDimRed_RNA(mock_obj, reduction = "umap", group_col = "orig.ident")
+#' p_dim
 #' @export
 PlotDimRed_RNA <- function(obj,
                            reduction = "umap",
@@ -238,6 +278,22 @@ PlotDimRed_RNA <- function(obj,
 #'
 #' @importFrom ggplot2 ggplot aes geom_vline geom_hline geom_point scale_fill_manual scale_size_manual scale_alpha_manual scale_color_manual theme_bw labs theme element_blank element_rect element_text element_line margin guide_legend arrow unit
 #' @importFrom ggrepel geom_text_repel
+#'
+#' @examples
+#' # 1. Generate mock Differential Expression Analysis (DEA) results
+#' set.seed(123)
+#' mock_dea <- data.frame(
+#'   gene = paste0("Gene_", 1:100),
+#'   avg_log2FC = rnorm(100, mean = 0, sd = 1.5),
+#'   p_val_adj = runif(100, min = 0, max = 0.1)
+#' )
+#' # Make a few genes highly significant for the plot
+#' mock_dea$avg_log2FC[1:5] <- runif(5, 2, 4)
+#' mock_dea$p_val_adj[1:5] <- runif(5, 1e-10, 1e-5)
+#'
+#' # 2. Generate Volcano Plot
+#' p_volcano <- PlotVolcano_RNA(mock_dea, fc_cut = 1, p_cut = 0.05, top_n = 3)
+#' p_volcano
 #' @export
 PlotVolcano_RNA <- function(res_df,
                             fc_cut = 1,
@@ -372,6 +428,38 @@ PlotVolcano_RNA <- function(res_df,
 #' @importFrom patchwork wrap_plots plot_annotation plot_layout
 #' @importFrom grDevices colorRampPalette
 #' @importFrom tools toTitleCase
+#'
+#' @examples
+#' # 1. Create mock RNA object with trajectory data
+#' set.seed(123)
+#' mock_umap <- matrix(rnorm(40), ncol = 2)
+#' rownames(mock_umap) <- paste0("Cell_", 1:20)
+#' colnames(mock_umap) <- c("UMAP_1", "UMAP_2")
+#'
+#' mock_meta <- data.frame(Auto_Cluster = rep(c("Cluster_1", "Cluster_2"), each = 10))
+#' rownames(mock_meta) <- rownames(mock_umap)
+#'
+#' # Mock pseudotime structure
+#' mock_pseudotime <- list(
+#'   pseudotime = runif(20, 0, 1),
+#'   dr_method = "umap",
+#'   group_col = "Auto_Cluster",
+#'   algorithm = "cluster",
+#'   start_clus = "Cluster_1",
+#'   curve_coords = matrix(rnorm(40), ncol = 2)
+#' )
+#'
+#' mock_obj <- list(
+#'   reductions = list(umap = mock_umap, pseudotime = mock_pseudotime),
+#'   meta.data = mock_meta
+#' )
+#' class(mock_obj) <- "RNA"
+#'
+#' # 2. Plot trajectory (requires patchwork)
+#' if (requireNamespace("patchwork", quietly = TRUE)) {
+#'   p_pseudo <- PlotPseudo_RNA(mock_obj)
+#'   p_pseudo
+#' }
 #' @export
 PlotPseudo_RNA <- function(obj) {
 
@@ -530,6 +618,28 @@ PlotPseudo_RNA <- function(obj) {
 #'
 #' @importFrom ggplot2 ggplot aes scale_fill_manual labs theme_bw theme element_text element_line element_blank element_rect margin
 #' @importFrom grDevices colorRampPalette
+#'
+#' @examples
+#' # 1. Create a mock epigenetic level matrix (Features x Samples)
+#' set.seed(42)
+#' mock_mat <- matrix(runif(150, min = 0, max = 1), nrow = 10, ncol = 15)
+#' colnames(mock_mat) <- paste0("Sample_", 1:15)
+#' rownames(mock_mat) <- paste0("Region_", 1:10)
+#'
+#' # 2. Create corresponding metadata
+#' mock_meta <- data.frame(
+#'   SampleID = paste0("Sample_", 1:15),
+#'   Condition = rep(c("Tumor", "Normal", "Metastasis"), each = 5)
+#' )
+#'
+#' # 3. Generate Ridge Plot (Requires ggridges)
+#' if (requireNamespace("ggridges", quietly = TRUE)) {
+#'   p_ridge <- PlotLandscape_Epi(
+#'     mat = mock_mat, meta = mock_meta,
+#'     sample_col = "SampleID", group_col = "Condition"
+#'   )
+#'   p_ridge
+#' }
 #' @export
 PlotLandscape_Epi <- function(mat,
                               meta,
@@ -640,6 +750,23 @@ PlotLandscape_Epi <- function(mat,
 #'
 #' @importFrom ggplot2 ggplot aes geom_hline geom_vline stat_ellipse geom_point labs scale_fill_manual scale_color_manual theme_bw theme element_text element_blank element_rect element_line unit margin
 #' @importFrom grDevices colorRampPalette
+#'
+#' @examples
+#' # 1. Create mock dimensionality reduction output data
+#' set.seed(123)
+#' mock_dr <- data.frame(
+#'   Dim1 = rnorm(15),
+#'   Dim2 = rnorm(15),
+#'   Group = rep(c("Tumor", "Normal", "Control"), each = 5)
+#' )
+#'
+#' # 2. Plot PCA with confidence ellipses
+#' p_pca <- PlotDimRed_Epi(
+#'   dr_data = mock_dr,
+#'   group_col = "Group",
+#'   method = "PCA"
+#' )
+#' p_pca
 #' @export
 PlotDimRed_Epi <- function(dr_data,
                            group_col,
@@ -743,6 +870,26 @@ PlotDimRed_Epi <- function(dr_data,
 #' @return A \code{ggplot} object.
 #'
 #' @importFrom ggplot2 ggplot aes geom_hline geom_vline geom_point scale_fill_manual theme_bw labs theme element_text element_blank element_rect margin
+#'
+#' @examples
+#' # 1. Create mock Differential Epigenetic Analysis (DEA) results
+#' set.seed(42)
+#' mock_epi_dea <- data.frame(
+#'   chrdata = paste0("chr1:", 1000:(1000+99)),
+#'   Diff = rnorm(100, mean = 0, sd = 0.8),
+#'   P.Value = runif(100, min = 0, max = 0.5)
+#' )
+#' # Force some significant points
+#' mock_epi_dea$Diff[1:3] <- c(1.5, 2.0, -1.8)
+#' mock_epi_dea$P.Value[1:3] <- c(0.001, 0.0005, 0.002)
+#'
+#' # 2. Plot Epigenetic Volcano Plot
+#' p_vol <- PlotVolcano_Epi(
+#'   df = mock_epi_dea,
+#'   metric_col = "Diff", p_col = "P.Value", feature_col = "chrdata",
+#'   th_effect = 1.0, th_p = 0.05, top_n = 3
+#' )
+#' p_vol
 #' @export
 PlotVolcano_Epi <- function(df,
                             metric_col = "Diff",
@@ -857,9 +1004,26 @@ PlotVolcano_Epi <- function(df,
 #' @param density_fill Character. Fill color for the density plots.
 #' @param alpha Numeric. Transparency for points and density fills (0 to 1).
 #'
+#' @return A \code{ggplot} object representing the correlation plots.
+#'
 #' @import ggplot2
 #' @importFrom stats cor
 #' @importFrom patchwork plot_annotation plot_layout
+#'
+#' @examples
+#' # 1. Create mock multi-omics integrated dataframe
+#' set.seed(123)
+#' mock_omics <- data.frame(
+#'   RNA_Exp = rnorm(50, mean = 10, sd = 2),
+#'   CpG_level = runif(50, 0, 1),
+#'   GpC_level = runif(50, 0, 1)
+#' )
+#'
+#' # 2. Generate Omics Correlation Matrix Plot (requires patchwork)
+#' if (requireNamespace("patchwork", quietly = TRUE)) {
+#'   p_matrix <- PlotOmicsMatrix(mock_omics, cor_method = "spearman")
+#'   p_matrix
+#' }
 #' @export
 PlotOmicsMatrix <- function(
     df,
@@ -976,9 +1140,30 @@ PlotOmicsMatrix <- function(
 #' @param color_gpc_rna Character. Color for GpC vs RNA plot.
 #' @param color_cpg_gpc Character. Color for CpG vs GpC plot.
 #'
+#' @return A \code{ggplot} object representing the scatter plots.
+#'
 #' @import ggplot2
 #' @importFrom ggpubr stat_cor
 #' @importFrom patchwork wrap_plots
+#'
+#' @examples
+#' # 1. Create mock multi-omics integrated dataframe
+#' set.seed(42)
+#' mock_omics <- data.frame(
+#'   RNA_Exp = rnorm(30, mean = 5, sd = 1),
+#'   CpG_level = runif(30, 0, 1)
+#'   # Omitted GpC_level to test the 2-omics dynamic layout
+#' )
+#'
+#' # Add artificial correlation
+#' mock_omics$RNA_Exp <- mock_omics$RNA_Exp - (mock_omics$CpG_level * 2)
+#'
+#' # 2. Generate pairwise scatter plots (requires ggpubr and patchwork)
+#' if (requireNamespace("ggpubr", quietly = TRUE) &&
+#'     requireNamespace("patchwork", quietly = TRUE)) {
+#'   p_scatter <- PlotOmicsScatter(mock_omics)
+#'   p_scatter
+#' }
 #' @export
 PlotOmicsScatter <- function(
     df,

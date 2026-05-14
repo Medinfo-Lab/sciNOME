@@ -21,3 +21,28 @@ followed by \code{.meth}, \code{.nonmeth}, and \code{.level} columns for each sa
 This function takes a directory of Bismark `.cov.gz` files and a BED file containing
 genomic regions. It aggregates the methylation data across these regions in parallel.
 }
+\examples{
+# 1. Create a temporary directory for mock files
+tmp_dir <- tempdir()
+
+# 2. Create a mock BED file
+mock_bed <- data.frame(chr = "chr1", start = 1, end = 100)
+bed_path <- file.path(tmp_dir, "mock.bed")
+write.table(mock_bed, bed_path, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
+
+# 3. Create a mock Bismark coverage file (.cov)
+mock_cov <- data.frame(
+  chr = c("chr1", "chr1"),
+  start = c(10, 50),
+  end = c(10, 50),
+  meth_perc = c(100, 0),
+  meth = c(1, 0),
+  unmeth = c(0, 1)
+)
+cov_path <- file.path(tmp_dir, "Sample1.cov")
+write.table(mock_cov, cov_path, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
+
+# 4. Run the aggregation function
+result <- Aggregate_epiRegions(cov_dir = tmp_dir, bed_file = bed_path, n_cores = 1)
+head(result)
+}

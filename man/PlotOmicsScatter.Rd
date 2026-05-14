@@ -29,9 +29,31 @@ PlotOmicsScatter(
 
 \item{color_cpg_gpc}{Character. Color for CpG vs GpC plot.}
 }
+\value{
+A \code{ggplot} object representing the scatter plots.
+}
 \description{
 Generates pairwise scatter plots for integrated multi-omics data.
 Automatically adds linear regression trend lines (LM) and calculates correlation
 coefficients (Spearman by default) using \code{ggpubr::stat_cor}.
 Dynamically generates 1 to 3 plots depending on the available omics layers in the dataframe.
+}
+\examples{
+# 1. Create mock multi-omics integrated dataframe
+set.seed(42)
+mock_omics <- data.frame(
+  RNA_Exp = rnorm(30, mean = 5, sd = 1),
+  CpG_level = runif(30, 0, 1)
+  # Omitted GpC_level to test the 2-omics dynamic layout
+)
+
+# Add artificial correlation
+mock_omics$RNA_Exp <- mock_omics$RNA_Exp - (mock_omics$CpG_level * 2)
+
+# 2. Generate pairwise scatter plots (requires ggpubr and patchwork)
+if (requireNamespace("ggpubr", quietly = TRUE) &&
+    requireNamespace("patchwork", quietly = TRUE)) {
+  p_scatter <- PlotOmicsScatter(mock_omics)
+  p_scatter
+}
 }

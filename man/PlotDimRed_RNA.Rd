@@ -28,3 +28,26 @@ Generates scatter plots for dimensionality reduction coordinates.
 Supports coloring by custom metadata and optionally juxtaposing with unsupervised clustering results.
 Uses distinct color palettes for the metadata plot and the clustering plot to avoid visual confusion.
 }
+\examples{
+# 1. Create minimal mock RNA object with reductions and metadata
+set.seed(42)
+mock_umap <- matrix(rnorm(80), ncol = 2)
+rownames(mock_umap) <- paste0("Cell_", 1:40)
+colnames(mock_umap) <- c("UMAP_1", "UMAP_2")
+
+mock_meta <- data.frame(
+  orig.ident = rep(c("Control", "Treatment"), each = 20),
+  Auto_Cluster = rep(paste0("Cluster_", 1:4), times = 10)
+)
+rownames(mock_meta) <- rownames(mock_umap)
+
+mock_obj <- list(
+  reductions = list(umap = mock_umap),
+  meta.data = mock_meta
+)
+class(mock_obj) <- "RNA"
+
+# 2. Generate plot
+p_dim <- PlotDimRed_RNA(mock_obj, reduction = "umap", group_col = "orig.ident")
+p_dim
+}

@@ -30,3 +30,19 @@ A \code{ggplot} object representing the volcano plot.
 Generates an academic-grade volcano plot based on differential expression analysis results.
 Automatically highlights and labels top significant up- and down-regulated genes.
 }
+\examples{
+# 1. Generate mock Differential Expression Analysis (DEA) results
+set.seed(123)
+mock_dea <- data.frame(
+  gene = paste0("Gene_", 1:100),
+  avg_log2FC = rnorm(100, mean = 0, sd = 1.5),
+  p_val_adj = runif(100, min = 0, max = 0.1)
+)
+# Make a few genes highly significant for the plot
+mock_dea$avg_log2FC[1:5] <- runif(5, 2, 4)
+mock_dea$p_val_adj[1:5] <- runif(5, 1e-10, 1e-5)
+
+# 2. Generate Volcano Plot
+p_volcano <- PlotVolcano_RNA(mock_dea, fc_cut = 1, p_cut = 0.05, top_n = 3)
+p_volcano
+}

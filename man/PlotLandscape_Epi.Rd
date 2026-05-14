@@ -40,3 +40,25 @@ Calculates the global mean across features for each sample from a
 provided '.level' matrix and generates a high-quality ridge plot showing the
 distribution across specified categorical groups.
 }
+\examples{
+# 1. Create a mock epigenetic level matrix (Features x Samples)
+set.seed(42)
+mock_mat <- matrix(runif(150, min = 0, max = 1), nrow = 10, ncol = 15)
+colnames(mock_mat) <- paste0("Sample_", 1:15)
+rownames(mock_mat) <- paste0("Region_", 1:10)
+
+# 2. Create corresponding metadata
+mock_meta <- data.frame(
+  SampleID = paste0("Sample_", 1:15),
+  Condition = rep(c("Tumor", "Normal", "Metastasis"), each = 5)
+)
+
+# 3. Generate Ridge Plot (Requires ggridges)
+if (requireNamespace("ggridges", quietly = TRUE)) {
+  p_ridge <- PlotLandscape_Epi(
+    mat = mock_mat, meta = mock_meta,
+    sample_col = "SampleID", group_col = "Condition"
+  )
+  p_ridge
+}
+}

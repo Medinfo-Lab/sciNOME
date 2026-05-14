@@ -17,6 +17,31 @@
 #' @importFrom S4Vectors queryHits subjectHits
 #' @importFrom IRanges findOverlaps
 #' @importFrom GenomicRanges GRanges
+#'
+#' @examples
+#' # 1. Create a temporary directory for mock files
+#' tmp_dir <- tempdir()
+#'
+#' # 2. Create a mock BED file
+#' mock_bed <- data.frame(chr = "chr1", start = 1, end = 100)
+#' bed_path <- file.path(tmp_dir, "mock.bed")
+#' write.table(mock_bed, bed_path, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
+#'
+#' # 3. Create a mock Bismark coverage file (.cov)
+#' mock_cov <- data.frame(
+#'   chr = c("chr1", "chr1"),
+#'   start = c(10, 50),
+#'   end = c(10, 50),
+#'   meth_perc = c(100, 0),
+#'   meth = c(1, 0),
+#'   unmeth = c(0, 1)
+#' )
+#' cov_path <- file.path(tmp_dir, "Sample1.cov")
+#' write.table(mock_cov, cov_path, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
+#'
+#' # 4. Run the aggregation function
+#' result <- Aggregate_epiRegions(cov_dir = tmp_dir, bed_file = bed_path, n_cores = 1)
+#' head(result)
 #' @export
 Aggregate_epiRegions <- function(cov_dir, bed_file, n_cores = 1) {
   # 1. Get the list of all cov files
@@ -136,6 +161,20 @@ Aggregate_epiRegions <- function(cov_dir, bed_file, n_cores = 1) {
 #' @return A \code{data.table} containing 'region_id' and the extracted metric columns.
 #'
 #' @importFrom data.table as.data.table
+#'
+#' @examples
+#' # Create mock aggregated data
+#' mock_data <- data.frame(
+#'   region_id = c("chr1:1-100", "chr1:101-200"),
+#'   SampleA.meth = c(10, 20),
+#'   SampleA.level = c(0.8, 0.9),
+#'   SampleB.meth = c(15, 25),
+#'   SampleB.level = c(0.5, 0.6)
+#' )
+#'
+#' # Extract only the '.level' columns
+#' level_data <- Extract_epiData(data = mock_data, suffix = ".level")
+#' head(level_data)
 #' @export
 Extract_epiData <- function(data, suffix, clean_names = TRUE) {
   # 1. Input data check and conversion
@@ -198,6 +237,20 @@ Extract_epiData <- function(data, suffix, clean_names = TRUE) {
 #' @return A filtered \code{data.table} retaining meth, nonmeth, and level columns for passed samples.
 #'
 #' @importFrom data.table as.data.table
+#'
+#' @examples
+#' # Create mock data with NA values
+#' mock_qc_data <- data.frame(
+#'   region_id = c("reg1", "reg2", "reg3"),
+#'   # Sample 1 is perfect
+#'   S1.meth = c(10, 20, 30), S1.nonmeth = c(2, 4, 6), S1.level = c(0.8, 0.8, 0.8),
+#'   # Sample 2 has 100% NAs (should be filtered out)
+#'   S2.meth = c(NA, NA, NA), S2.nonmeth = c(NA, NA, NA), S2.level = c(NA, NA, NA)
+#' )
+#'
+#' # Run QC (Require max 50% NAs per column)
+#' qc_result <- QC_epiData(mock_qc_data, top_n_rows = 2, max_col_na_ratio = 0.5)
+#' head(qc_result)
 #' @export
 QC_epiData <- function(data,
                        top_n_rows = 5000,
@@ -319,6 +372,28 @@ QC_epiData <- function(data,
 #' @return A data.frame containing sample IDs, Dim1, Dim2, and original metadata columns, ready for plotting.
 #'
 #' @importFrom stats prcomp cor as.dist cmdscale
+#'
+#' @examples
+#' # 1. Create mock methylation level matrix
+#' mock_mat <- data.frame(
+#'   region_id = c("reg1", "reg2", "reg3", "reg4"),
+#'   Sample1 = c(0.9, 0.8, 0.9, 0.8),
+#'   Sample2 = c(0.8, 0.9, 0.8, 0.9),
+#'   Sample3 = c(0.1, 0.2, 0.1, 0.2),
+#'   Sample4 = c(0.2, 0.1, 0.2, 0.1)
+#' )
+#'
+#' # 2. Create mock metadata
+#' mock_meta <- data.frame(
+#'   ID = c("Sample1", "Sample2", "Sample3", "Sample4"),
+#'   Group = c("Tumor", "Tumor", "Normal", "Normal")
+#' )
+#'
+#' # 3. Run PCA dimensionality reduction
+#' pca_res <- Reduce_epiDims(mat = mock_mat, meta = mock_meta,
+#'                           sample_col = "ID", group_col = "Group",
+#'                           dr_method = "PCA")
+#' head(pca_res)
 #' @export
 Reduce_epiDims <- function(
     mat,
@@ -501,6 +576,36 @@ Reduce_epiDims <- function(
 #' @return A \code{data.frame} containing the comprehensive differential analysis results, sorted dynamically by P-value (ascending) and effect size (descending).
 #'
 #' @importFrom stats var fisher.test p.adjust
+#'
+#' @examples
+#' # 1. Create a mock raw data matrix (3 regions, 4 samples)
+#' mock_raw <- data.frame(
+#'   region_id = c("reg1", "reg2", "reg3"),
+#'   # Target group
+#'   S1.level=c(0.9, 0.5, 0.1), S1.meth=c(9, 5, 1), S1.nonmeth=c(1, 5, 9),
+#'   S2.level=c(0.8, 0.6, 0.2), S2.meth=c(8, 6, 2), S2.nonmeth=c(2, 4, 8),
+#'   # Control group
+#'   C1.level=c(0.1, 0.5, 0.9), C1.meth=c(1, 5, 9), C1.nonmeth=c(9, 5, 1),
+#'   C2.level=c(0.2, 0.4, 0.8), C2.meth=c(2, 4, 8), C2.nonmeth=c(8, 6, 2)
+#' )
+#'
+#' # 2. Create metadata to map columns
+#' mock_meta <- data.frame(
+#'   Sample = c("S1", "S2", "C1", "C2"),
+#'   Group = c("Tumor", "Tumor", "Normal", "Normal"),
+#'   level_col = c("S1.level", "S2.level", "C1.level", "C2.level"),
+#'   meth_col = c("S1.meth", "S2.meth", "C1.meth", "C2.meth"),
+#'   nonmeth_col = c("S1.nonmeth", "S2.nonmeth", "C1.nonmeth", "C2.nonmeth")
+#' )
+#'
+#' # 3. Run differential analysis
+#' diff_res <- Run_Diffanalysis(
+#'   raw_mat = mock_raw, meta = mock_meta, group_col = "Group",
+#'   target_group = "Tumor", control_group = "Normal",
+#'   col_level = "level_col", col_meth = "meth_col", col_nonmeth = "nonmeth_col",
+#'   effect_metric = "Diff", effect_th = 0.5, p_th = 0.05, verbose = FALSE
+#' )
+#' head(diff_res)
 #' @export
 Run_Diffanalysis <- function(raw_mat,
                              meta,

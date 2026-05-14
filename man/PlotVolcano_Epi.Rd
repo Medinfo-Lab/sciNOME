@@ -43,3 +43,23 @@ Generates a publication-quality volcano plot to visualize differential
 methylation/epigenetic regions (DMRs). Supports dynamic effect size metrics
 (e.g., logFC, Difference, Z-Scores).
 }
+\examples{
+# 1. Create mock Differential Epigenetic Analysis (DEA) results
+set.seed(42)
+mock_epi_dea <- data.frame(
+  chrdata = paste0("chr1:", 1000:(1000+99)),
+  Diff = rnorm(100, mean = 0, sd = 0.8),
+  P.Value = runif(100, min = 0, max = 0.5)
+)
+# Force some significant points
+mock_epi_dea$Diff[1:3] <- c(1.5, 2.0, -1.8)
+mock_epi_dea$P.Value[1:3] <- c(0.001, 0.0005, 0.002)
+
+# 2. Plot Epigenetic Volcano Plot
+p_vol <- PlotVolcano_Epi(
+  df = mock_epi_dea,
+  metric_col = "Diff", p_col = "P.Value", feature_col = "chrdata",
+  th_effect = 1.0, th_p = 0.05, top_n = 3
+)
+p_vol
+}

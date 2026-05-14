@@ -22,3 +22,21 @@ An updated \code{RNA} object with integrated metadata.
 Core engine for injecting metadata into the \code{meta.data} slot of a RNA object.
 Supports both strict ID matching and ordered vector injection.
 }
+\examples{
+# 1. Create a basic RNA object
+mock_counts <- matrix(rpois(100, lambda = 5), nrow = 10, ncol = 10)
+rownames(mock_counts) <- paste0("Gene_", 1:10)
+colnames(mock_counts) <- paste0("Cell_", 1:10)
+rna_obj <- CreateRNAObject(counts = mock_counts)
+
+# 2. Create mock metadata
+meta_data <- data.frame(
+  Cell_ID = paste0("Cell_", 1:10),
+  Group = rep(c("Control", "Treatment"), each = 5),
+  Batch = rep(c("B1", "B2"), times = 5)
+)
+
+# 3. Add metadata to the object
+rna_obj <- AddMetaData_RNA(rna_obj, meta_data = meta_data, id_col = "Cell_ID")
+head(rna_obj$meta.data)
+}

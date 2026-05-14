@@ -26,8 +26,26 @@ PlotOmicsMatrix(
 
 \item{alpha}{Numeric. Transparency for points and density fills (0 to 1).}
 }
+\value{
+A \code{ggplot} object representing the correlation plots.
+}
 \description{
 Generates a matrix plot showing the distribution (density) of each omics layer on the diagonal,
 pairwise scatter plots on the lower triangle, and Spearman correlation coefficients on the upper triangle.
 Automatically adapts to dual-omics (2x2) or tri-omics (3x3) data based on the input dataframe.
+}
+\examples{
+# 1. Create mock multi-omics integrated dataframe
+set.seed(123)
+mock_omics <- data.frame(
+  RNA_Exp = rnorm(50, mean = 10, sd = 2),
+  CpG_level = runif(50, 0, 1),
+  GpC_level = runif(50, 0, 1)
+)
+
+# 2. Generate Omics Correlation Matrix Plot (requires patchwork)
+if (requireNamespace("patchwork", quietly = TRUE)) {
+  p_matrix <- PlotOmicsMatrix(mock_omics, cor_method = "spearman")
+  p_matrix
+}
 }

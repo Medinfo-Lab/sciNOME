@@ -29,3 +29,24 @@ A \code{RNA} object with \code{Pseudotime} stored in \code{filter_meta.data} and
 \description{
 Computes cellular pseudotime using either a cluster-based Principal Curve method or a graph-based K-NN shortest path method.
 }
+\examples{
+# 1. Prepare fully processed mock object
+set.seed(42)
+mock_counts <- matrix(rpois(400, lambda = 5), nrow = 20, ncol = 20)
+rownames(mock_counts) <- paste0("Gene_", 1:20)
+colnames(mock_counts) <- paste0("Cell_", 1:20)
+rna_obj <- Build_RNAObject(mock_counts, min_cells = 0, min_features = 0)
+rna_obj <- ProcessQC_RNA(rna_obj, min_nCount = 0, min_nFeature = 0, do_scale = FALSE)
+rna_obj <- RunDimReduction_RNA(rna_obj, method = "PCA", n_hvg = 15, pca_rank = 3)
+rna_obj <- RunClustering_RNA(rna_obj, reduction = "pca", method = "hierarchical", cluster_k = 2)
+
+# 2. Run Pseudotime Inference using PCA space
+rna_obj <- RunPseudotime_RNA(
+  obj = rna_obj,
+  reduction = "pca",
+  group_col = "Auto_Cluster",
+  start_clus = "Cluster_1",
+  algorithm = "cluster"
+)
+head(rna_obj$filter_meta.data$Pseudotime)
+}

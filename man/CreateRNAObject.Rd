@@ -24,3 +24,15 @@ A \code{RNA} object containing initialized assays and basic QC metrics.
 Internal core function to initialize a RNA object from a raw counts matrix.
 Automatically calculates basic QC metrics including percent_mt.
 }
+\examples{
+# Create a mock count matrix (10 genes x 10 cells)
+set.seed(42)
+mock_counts <- matrix(rpois(100, lambda = 5), nrow = 10, ncol = 10)
+rownames(mock_counts) <- paste0("Gene_", 1:10)
+colnames(mock_counts) <- paste0("Cell_", 1:10)
+
+# Initialize the RNA object
+rna_obj <- CreateRNAObject(counts = mock_counts, project_name = "Mock_Project")
+print(class(rna_obj))
+head(rna_obj$meta.data)
+}

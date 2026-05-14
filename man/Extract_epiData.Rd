@@ -21,3 +21,17 @@ A \code{data.table} containing 'region_id' and the extracted metric columns.
 Extracts columns ending with a specific suffix (e.g., ".meth", ".nonmeth", ".level")
 from the aggregated results, while always retaining the 'region_id' column.
 }
+\examples{
+# Create mock aggregated data
+mock_data <- data.frame(
+  region_id = c("chr1:1-100", "chr1:101-200"),
+  SampleA.meth = c(10, 20),
+  SampleA.level = c(0.8, 0.9),
+  SampleB.meth = c(15, 25),
+  SampleB.level = c(0.5, 0.6)
+)
+
+# Extract only the '.level' columns
+level_data <- Extract_epiData(data = mock_data, suffix = ".level")
+head(level_data)
+}

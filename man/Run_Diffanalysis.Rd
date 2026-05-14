@@ -52,3 +52,33 @@ Performs differential methylation/epigenetic analysis between a target group and
 It calculates level variances, fold changes, and utilizes Fisher's Exact Test on count data to determine statistical significance.
 Finally, it classifies regions as "Up-regulated", "Down-regulated", or "Not Sig" based on user-defined thresholds.
 }
+\examples{
+# 1. Create a mock raw data matrix (3 regions, 4 samples)
+mock_raw <- data.frame(
+  region_id = c("reg1", "reg2", "reg3"),
+  # Target group
+  S1.level=c(0.9, 0.5, 0.1), S1.meth=c(9, 5, 1), S1.nonmeth=c(1, 5, 9),
+  S2.level=c(0.8, 0.6, 0.2), S2.meth=c(8, 6, 2), S2.nonmeth=c(2, 4, 8),
+  # Control group
+  C1.level=c(0.1, 0.5, 0.9), C1.meth=c(1, 5, 9), C1.nonmeth=c(9, 5, 1),
+  C2.level=c(0.2, 0.4, 0.8), C2.meth=c(2, 4, 8), C2.nonmeth=c(8, 6, 2)
+)
+
+# 2. Create metadata to map columns
+mock_meta <- data.frame(
+  Sample = c("S1", "S2", "C1", "C2"),
+  Group = c("Tumor", "Tumor", "Normal", "Normal"),
+  level_col = c("S1.level", "S2.level", "C1.level", "C2.level"),
+  meth_col = c("S1.meth", "S2.meth", "C1.meth", "C2.meth"),
+  nonmeth_col = c("S1.nonmeth", "S2.nonmeth", "C1.nonmeth", "C2.nonmeth")
+)
+
+# 3. Run differential analysis
+diff_res <- Run_Diffanalysis(
+  raw_mat = mock_raw, meta = mock_meta, group_col = "Group",
+  target_group = "Tumor", control_group = "Normal",
+  col_level = "level_col", col_meth = "meth_col", col_nonmeth = "nonmeth_col",
+  effect_metric = "Diff", effect_th = 0.5, p_th = 0.05, verbose = FALSE
+)
+head(diff_res)
+}

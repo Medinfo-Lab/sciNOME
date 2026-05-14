@@ -22,3 +22,20 @@ A ggplot2 object.
 Generates an elegant, publication-ready scatter plot from the output of `Reduce_epiDims`.
 Features dynamic coloring, automatic confidence ellipses (if sample size allows), and clean themes.
 }
+\examples{
+# 1. Create mock dimensionality reduction output data
+set.seed(123)
+mock_dr <- data.frame(
+  Dim1 = rnorm(15),
+  Dim2 = rnorm(15),
+  Group = rep(c("Tumor", "Normal", "Control"), each = 5)
+)
+
+# 2. Plot PCA with confidence ellipses
+p_pca <- PlotDimRed_Epi(
+  dr_data = mock_dr,
+  group_col = "Group",
+  method = "PCA"
+)
+p_pca
+}

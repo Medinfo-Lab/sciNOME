@@ -43,3 +43,25 @@ Preprocesses methylation/accessibility level matrices, performs smart sample
 name matching with metadata, imputes missing values, and calculates dimensionality
 reduction coordinates (PCA, UMAP, MDS, or NMF).
 }
+\examples{
+# 1. Create mock methylation level matrix
+mock_mat <- data.frame(
+  region_id = c("reg1", "reg2", "reg3", "reg4"),
+  Sample1 = c(0.9, 0.8, 0.9, 0.8),
+  Sample2 = c(0.8, 0.9, 0.8, 0.9),
+  Sample3 = c(0.1, 0.2, 0.1, 0.2),
+  Sample4 = c(0.2, 0.1, 0.2, 0.1)
+)
+
+# 2. Create mock metadata
+mock_meta <- data.frame(
+  ID = c("Sample1", "Sample2", "Sample3", "Sample4"),
+  Group = c("Tumor", "Tumor", "Normal", "Normal")
+)
+
+# 3. Run PCA dimensionality reduction
+pca_res <- Reduce_epiDims(mat = mock_mat, meta = mock_meta,
+                          sample_col = "ID", group_col = "Group",
+                          dr_method = "PCA")
+head(pca_res)
+}

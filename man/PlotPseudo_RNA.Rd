@@ -17,3 +17,35 @@ Generates a dual-panel plot for pseudotime analysis.
 The left panel shows the continuous pseudotime gradient, while the right panel shows the categorical clusters.
 Overlays the inferred trajectory path and the root node (start cluster) if available.
 }
+\examples{
+# 1. Create mock RNA object with trajectory data
+set.seed(123)
+mock_umap <- matrix(rnorm(40), ncol = 2)
+rownames(mock_umap) <- paste0("Cell_", 1:20)
+colnames(mock_umap) <- c("UMAP_1", "UMAP_2")
+
+mock_meta <- data.frame(Auto_Cluster = rep(c("Cluster_1", "Cluster_2"), each = 10))
+rownames(mock_meta) <- rownames(mock_umap)
+
+# Mock pseudotime structure
+mock_pseudotime <- list(
+  pseudotime = runif(20, 0, 1),
+  dr_method = "umap",
+  group_col = "Auto_Cluster",
+  algorithm = "cluster",
+  start_clus = "Cluster_1",
+  curve_coords = matrix(rnorm(40), ncol = 2)
+)
+
+mock_obj <- list(
+  reductions = list(umap = mock_umap, pseudotime = mock_pseudotime),
+  meta.data = mock_meta
+)
+class(mock_obj) <- "RNA"
+
+# 2. Plot trajectory (requires patchwork)
+if (requireNamespace("patchwork", quietly = TRUE)) {
+  p_pseudo <- PlotPseudo_RNA(mock_obj)
+  p_pseudo
+}
+}

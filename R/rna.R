@@ -11,6 +11,18 @@
 #'
 #' @importFrom Matrix colSums
 #' @importFrom methods as
+#'
+#' @examples
+#' # Create a mock count matrix (10 genes x 10 cells)
+#' set.seed(42)
+#' mock_counts <- matrix(rpois(100, lambda = 5), nrow = 10, ncol = 10)
+#' rownames(mock_counts) <- paste0("Gene_", 1:10)
+#' colnames(mock_counts) <- paste0("Cell_", 1:10)
+#'
+#' # Initialize the RNA object
+#' rna_obj <- CreateRNAObject(counts = mock_counts, project_name = "Mock_Project")
+#' print(class(rna_obj))
+#' head(rna_obj$meta.data)
 #' @export
 CreateRNAObject <- function(counts, project_name = "RNA_Project", mt_pattern = "^[Mm][Tt]-") {
 
@@ -85,6 +97,23 @@ CreateRNAObject <- function(counts, project_name = "RNA_Project", mt_pattern = "
 #'
 #' @return An updated \code{RNA} object with integrated metadata.
 #'
+#' @examples
+#' # 1. Create a basic RNA object
+#' mock_counts <- matrix(rpois(100, lambda = 5), nrow = 10, ncol = 10)
+#' rownames(mock_counts) <- paste0("Gene_", 1:10)
+#' colnames(mock_counts) <- paste0("Cell_", 1:10)
+#' rna_obj <- CreateRNAObject(counts = mock_counts)
+#'
+#' # 2. Create mock metadata
+#' meta_data <- data.frame(
+#'   Cell_ID = paste0("Cell_", 1:10),
+#'   Group = rep(c("Control", "Treatment"), each = 5),
+#'   Batch = rep(c("B1", "B2"), times = 5)
+#' )
+#'
+#' # 3. Add metadata to the object
+#' rna_obj <- AddMetaData_RNA(rna_obj, meta_data = meta_data, id_col = "Cell_ID")
+#' head(rna_obj$meta.data)
 #' @export
 AddMetaData_RNA <- function(object, meta_data, id_col = NULL, group_cols = NULL) {
   current_meta <- object$meta.data
@@ -145,6 +174,28 @@ AddMetaData_RNA <- function(object, meta_data, id_col = NULL, group_cols = NULL)
 #' @return A built and pre-filtered \code{RNA} object.
 #'
 #' @importFrom Matrix colSums rowSums
+#'
+#' @examples
+#' # 1. Create mock expression matrix and metadata
+#' set.seed(123)
+#' mock_counts <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+#' rownames(mock_counts) <- paste0("Gene_", 1:10)
+#' colnames(mock_counts) <- paste0("Cell_", 1:10)
+#'
+#' mock_meta <- data.frame(
+#'   ID = paste0("Cell_", 1:10),
+#'   Condition = rep(c("WT", "KO"), each = 5)
+#' )
+#'
+#' # 2. Build the object directly
+#' rna_obj <- Build_RNAObject(
+#'   expr_mat = mock_counts,
+#'   meta_data = mock_meta,
+#'   meta_id_col = "ID",
+#'   min_cells = 0, # Set to 0 for this tiny mock data
+#'   min_features = 0
+#' )
+#' head(rna_obj$meta.data)
 #' @export
 Build_RNAObject <- function(expr_mat,
                             meta_data = NULL,
@@ -235,6 +286,26 @@ Build_RNAObject <- function(expr_mat,
 #' @return A \code{RNA} object after QC, filtering, and normalization.
 #'
 #' @importFrom Matrix colSums t
+#'
+#' @examples
+#' # 1. Create mock data (include mock mitochondrial genes)
+#' set.seed(123)
+#' mock_counts <- matrix(rpois(100, lambda = 10), nrow = 10, ncol = 10)
+#' rownames(mock_counts) <- c("MT-ND1", "MT-ND2", paste0("Gene_", 3:10))
+#' colnames(mock_counts) <- paste0("Cell_", 1:10)
+#'
+#' # 2. Build basic object
+#' rna_obj <- Build_RNAObject(mock_counts, min_cells = 0, min_features = 0)
+#'
+#' # 3. Run QC and Normalization (use relaxed thresholds for mock data)
+#' rna_obj <- ProcessQC_RNA(
+#'   obj = rna_obj,
+#'   mt_pattern = "^MT-",
+#'   min_nCount = 0, min_nFeature = 0, max_mt = 100,
+#'   norm_method = "LogNormalize",
+#'   do_scale = FALSE # Keep false to save time in example
+#' )
+#' dim(rna_obj$assays$RNA$data)
 #' @export
 ProcessQC_RNA <- function(obj,
                           mt_pattern = "^MT-",
@@ -350,6 +421,24 @@ ProcessQC_RNA <- function(obj,
 #' @return A \code{RNA} object with embedded coordinates.
 #'
 #' @importFrom Matrix rowMeans t
+#'
+#' @examples
+#' # 1. Generate object and process QC
+#' set.seed(42)
+#' mock_counts <- matrix(rnbinom(400, mu = 10, size = 1), nrow = 20, ncol = 20)
+#' rownames(mock_counts) <- paste0("Gene_", 1:20)
+#' colnames(mock_counts) <- paste0("Cell_", 1:20)
+#' rna_obj <- Build_RNAObject(mock_counts, min_cells = 0, min_features = 0)
+#' rna_obj <- ProcessQC_RNA(rna_obj, min_nCount = 0, min_nFeature = 0, do_scale = FALSE)
+#'
+#' # 2. Run PCA dimensionality reduction
+#' rna_obj <- RunDimReduction_RNA(
+#'   obj = rna_obj,
+#'   method = "PCA",
+#'   n_hvg = 10,
+#'   pca_rank = 3 # Use small rank for tiny mock data
+#' )
+#' head(rna_obj$reductions$pca)
 #' @export
 RunDimReduction_RNA <- function(obj,
                                 method = "PCA",
@@ -458,6 +547,25 @@ RunDimReduction_RNA <- function(obj,
 #'
 #' @importFrom stats dist hclust cutree
 #' @importFrom igraph graph_from_edgelist simplify cluster_leiden
+#'
+#' @examples
+#' # 1. Prepare data and run dimensionality reduction
+#' set.seed(123)
+#' mock_counts <- matrix(rpois(400, lambda = 10), nrow = 20, ncol = 20)
+#' rownames(mock_counts) <- paste0("Gene_", 1:20)
+#' colnames(mock_counts) <- paste0("Cell_", 1:20)
+#' rna_obj <- Build_RNAObject(mock_counts, min_cells = 0, min_features = 0)
+#' rna_obj <- ProcessQC_RNA(rna_obj, min_nCount = 0, min_nFeature = 0, do_scale = FALSE)
+#' rna_obj <- RunDimReduction_RNA(rna_obj, method = "PCA", n_hvg = 15, pca_rank = 5)
+#'
+#' # 2. Run Clustering (Hierarchical is very fast and stable for tiny data)
+#' rna_obj <- RunClustering_RNA(
+#'   obj = rna_obj,
+#'   reduction = "pca",
+#'   method = "hierarchical",
+#'   cluster_k = 2
+#' )
+#' table(rna_obj$filter_meta.data$Auto_Cluster)
 #' @export
 RunClustering_RNA <- function(obj,
                               reduction = "pca",
@@ -558,6 +666,31 @@ RunClustering_RNA <- function(obj,
 #'
 #' @importFrom Matrix rowSums rowMeans
 #' @importFrom stats wilcox.test p.adjust
+#'
+#' @examples
+#' # 1. Create mock data with simulated group differences
+#' set.seed(123)
+#' # Gene 1-5 will be highly expressed in Cell 1-10 (Cluster_A)
+#' mat_A <- matrix(rpois(100, lambda = 20), nrow = 10, ncol = 10)
+#' mat_B <- matrix(rpois(100, lambda = 1), nrow = 10, ncol = 10)
+#' mock_counts <- rbind(cbind(mat_A, mat_B), cbind(mat_B, mat_A))
+#' rownames(mock_counts) <- paste0("Gene_", 1:20)
+#' colnames(mock_counts) <- paste0("Cell_", 1:20)
+#'
+#' # 2. Build object and manually inject cluster labels for testing
+#' rna_obj <- Build_RNAObject(mock_counts, min_cells = 0, min_features = 0)
+#' rna_obj <- ProcessQC_RNA(rna_obj, min_nCount = 0, min_nFeature = 0, do_scale = FALSE)
+#' rna_obj$filter_meta.data$Auto_Cluster <- rep(c("Cluster_A", "Cluster_B"), each = 10)
+#'
+#' # 3. Run Differential Expression Analysis
+#' dea_res <- RunDEA_RNA(
+#'   obj = rna_obj,
+#'   group_col = "Auto_Cluster",
+#'   ident_1 = "Cluster_A",
+#'   ident_2 = "Cluster_B",
+#'   min_pct = 0, logfc_thresh = 0 # Relaxed for mock data
+#' )
+#' head(dea_res)
 #' @export
 RunDEA_RNA <- function(obj,
                        layer_name = "data",
@@ -714,7 +847,28 @@ RunDEA_RNA <- function(obj,
 #'
 #' @return A \code{RNA} object with \code{Pseudotime} stored in \code{filter_meta.data} and detailed trajectory info in \code{reductions$pseudotime}.
 #'
-#' @importFrom igraph graph_from_edgelist simplify distances V
+#' @importFrom igraph graph_from_edgelist simplify distances
+#'
+#' @examples
+#' # 1. Prepare fully processed mock object
+#' set.seed(42)
+#' mock_counts <- matrix(rpois(400, lambda = 5), nrow = 20, ncol = 20)
+#' rownames(mock_counts) <- paste0("Gene_", 1:20)
+#' colnames(mock_counts) <- paste0("Cell_", 1:20)
+#' rna_obj <- Build_RNAObject(mock_counts, min_cells = 0, min_features = 0)
+#' rna_obj <- ProcessQC_RNA(rna_obj, min_nCount = 0, min_nFeature = 0, do_scale = FALSE)
+#' rna_obj <- RunDimReduction_RNA(rna_obj, method = "PCA", n_hvg = 15, pca_rank = 3)
+#' rna_obj <- RunClustering_RNA(rna_obj, reduction = "pca", method = "hierarchical", cluster_k = 2)
+#'
+#' # 2. Run Pseudotime Inference using PCA space
+#' rna_obj <- RunPseudotime_RNA(
+#'   obj = rna_obj,
+#'   reduction = "pca",
+#'   group_col = "Auto_Cluster",
+#'   start_clus = "Cluster_1",
+#'   algorithm = "cluster"
+#' )
+#' head(rna_obj$filter_meta.data$Pseudotime)
 #' @export
 RunPseudotime_RNA <- function(obj,
                               reduction = "umap",

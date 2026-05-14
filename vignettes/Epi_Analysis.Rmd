@@ -1,16 +1,21 @@
 ---
-title: "2. Epigenetic Analysis (CpG & GpC) Pipeline"
-output: rmarkdown::html_vignette
+title: "Epigenetic Data Processing and Analysis using sciNOME"
+author: "Shitao Zhou"
+date: "`r Sys.Date()`"
+output: 
+  BiocStyle::html_document:
+    toc: true
 vignette: >
-  %\VignetteIndexEntry{2. Epigenetic Analysis (CpG & GpC) Pipeline}
+  %\VignetteIndexEntry{Epigenetic Data Processing and Analysis using sciNOME}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
+  eval = TRUE,     # CRITICAL: Ensures all code runs during BiocCheck
   warning = FALSE,
   message = FALSE
 )
@@ -18,105 +23,155 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-Welcome to the `sciNOME` Epigenetic Analysis pipeline. This module is designed to process both DNA Methylation (CpG) and Chromatin Accessibility (GpC) data from single-cell or bulk bisulfite sequencing (e.g., Bismark outputs). 
+The `sciNOME` package provides an end-to-end pipeline for processing single-cell or bulk epigenetic data (DNA methylation/Chromatin accessibility). This vignette demonstrates the complete workflow:
 
-The workflow seamlessly guides you through genomic region aggregation, strict Quality Control (QC), missing value imputation, dimensionality reduction, and robust differential epigenetic analysis.
+1. Aggregating raw Bismark coverage files (`.cov.gz`) into genomic regions.
+2. Extracting specific metric matrices.
+3. Performing quality control (QC).
+4. Running dimensionality reduction (PCA).
+5. Performing differential epigenetic analysis.
 
-```{r setup, eval=FALSE}
-# Load the package
+## 1. Setup and Mock Data Generation
+
+To demonstrate the workflow, we will simulate a tiny dataset containing 4 samples (2 Tumor, 2 Normal) and 5 genomic regions. We create temporary `.cov` and `.bed` files.
+
+```{r load-pkg}
 library(sciNOME)
-```
+library(data.table)
 
-## 1. Data Aggregation from Bismark Files
+# Create a temporary directory for our mock data
+tmp_dir <- tempdir()
 
-The first step is to summarize base-resolution Bismark `.cov` (or `.cov.gz`) files into defined genomic regions (e.g., promoters, enhancers, or gene bodies) provided in a standard BED file.
-
-The `Aggregate_epiRegions()` function reads all files in a directory and aggregates the methylated counts, unmethylated counts, and methylation levels in parallel.
-
-```{r aggregate, eval=FALSE}
-# Define paths
-cov_directory <- "path/to/bismark_cov_files/"
-bed_file_path <- "path/to/genomic_regions.bed"
-
-# Run aggregation using 4 cores
-raw_epi_mat <- Aggregate_epiRegions(
-  cov_dir = cov_directory,
-  bed_file = bed_file_path,
-  n_cores = 4 
+# 1. Create a mock BED file (5 regions)
+mock_bed <- data.frame(
+  chr = "chr1", 
+  start = seq(1, 401, 100), 
+  end = seq(100, 500, 100)
 )
-```
+bed_path <- file.path(tmp_dir, "regions.bed")
+write.table(mock_bed, bed_path, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
 
-## 2. Quality Control (QC) and Matrix Extraction
+# 2. Create mock Bismark .cov files for 4 samples
+samples <- c("Tumor_1", "Tumor_2", "Normal_1", "Normal_2")
+set.seed(123)
 
-Epigenetic matrices often contain missing values (NAs) due to low sequencing coverage. `sciNOME` provides a rigorous two-step QC method via `QC_epiData()`:
-1. Retains the top *N* genomic regions with the lowest NA rates.
-2. Removes samples with excessively high NA rates across these reliable regions.
-
-```{r qc, eval=FALSE}
-# Perform strict Two-Step QC
-qc_epi_mat <- QC_epiData(
-  data = raw_epi_mat,
-  top_n_rows = 5000,           # Keep the top 5000 highest-quality regions
-  max_col_na_ratio = 0.8       # Drop samples with >80% missing data
-)
-```
-
-Once QC is complete, you might want to extract only the methylation `.level` matrix for clustering or visualization.
-
-```{r extract, eval=FALSE}
-# Extract ONLY the methylation level matrix (values between 0 and 1)
-level_mat <- Extract_epiData(data = qc_epi_mat, suffix = ".level")
-```
-
-## 3. Dimensionality Reduction
-
-Visualizing epigenetic data requires handling missing values. `Reduce_epiDims()` performs smart fuzzy matching with your metadata, imputes NAs (via KNN or Mean), and runs advanced dimensionality reduction algorithms (PCA, UMAP, MDS, or NMF).
-
-```{r dimred, eval=FALSE}
-# Assuming you have a metadata data.frame mapping sample IDs to conditions
-# meta_df <- read.csv("metadata.csv")
-
-epi_umap <- Reduce_epiDims(
-  mat = level_mat,
-  meta = meta_df,
-  sample_col = "SampleID",
-  group_col = "Condition",
-  dr_method = "UMAP",          # Options: "PCA", "UMAP", "MDS", "NMF"
-  impute_method = "knn",       # Advanced KNN imputation for missing values
-  knn_k = 10
-)
-
-# The result is a data.frame ready for ggplot2 visualization
-# head(epi_umap)
-```
-
-## 4. Differential Epigenetic Analysis
-
-To find Differentially Methylated/Accessible Regions (DMRs/DARs), `Run_Diffanalysis()` uses an advanced statistical framework. It calculates variance and fold-change based on `.level` values, and performs **Fisher's Exact Test** using actual `.meth` and `.nonmeth` read counts for precise significance testing.
-
-```{r diff_analysis, eval=FALSE}
-# Example: Compare the "Disease" group against all other samples ("Rest")
-diff_results <- Run_Diffanalysis(
-  raw_mat = qc_epi_mat,          # Use the combined QC'd matrix (contains level, meth, nonmeth)
-  meta = meta_df,                # Global metadata
-  group_col = "Condition",       # Column defining the groups
-  target_group = "Disease",      # Experimental group
-  control_group = NULL,          # Set to NULL for "Target vs Rest", or specify a control like "Healthy"
+for (samp in samples) {
+  # Generate a 6-column mock Bismark coverage file
+  mock_cov <- data.frame(
+    chr = "chr1", 
+    start = seq(50, 450, 100),       # Column 2
+    end = seq(50, 450, 100),         # Column 3
+    meth_perc = 50,                  # Column 4 (Dummy placeholder)
+    meth = sample(10:50, 5, replace=TRUE),   # Column 5: methylated count
+    unmeth = sample(10:50, 5, replace=TRUE)  # Column 6: unmethylated count
+  )
   
-  # Specify how your metadata maps to the matrix columns
-  col_level = "Level_Col",       
-  col_meth = "Meth_Col",
-  col_nonmeth = "Unmeth_Col",
+  # Make Tumor slightly more methylated for differential analysis later
+  if(grepl("Tumor", samp)) mock_cov$meth <- mock_cov$meth + 30 
   
-  effect_metric = "Diff",        # Metric to define direction (Options: "Diff", "logFC", "Scores")
-  effect_th = 0.2,               # Minimum Absolute Difference threshold (e.g., 20% change)
-  p_th = 0.05                    # P-value threshold
-)
-
-# The output table automatically classifies regions into "Up-regulated" or "Down-regulated"
-# head(diff_results)
+  cov_path <- file.path(tmp_dir, paste0(samp, ".cov"))
+  write.table(mock_cov, cov_path, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
+}
 ```
 
-## Next Steps
+## 2. Data Aggregation
 
-Now that you have successfully processed both RNA and Epigenetic layers independently, you are ready to explore the cross-talk between them. Proceed to the next vignette: **3. Multi-Omics Integration**.
+We use `Aggregate_epiRegions` to map the `.cov` files to the BED regions.
+
+```{r aggregate}
+agg_dt <- Aggregate_epiRegions(
+  cov_dir = tmp_dir, 
+  bed_file = bed_path, 
+  n_cores = 1
+)
+
+# Display the first few rows
+head(agg_dt)
+```
+
+## 3. Extracting specific Metrics and Quality Control
+
+We can extract just the methylation level matrix using `Extract_epiData`. Before that, let's introduce an `NA` value to demonstrate the QC function.
+
+```{r qc-data}
+# Introduce an NA to simulate missing data
+agg_dt[1, "Tumor.1.level"] <- NA 
+
+# Extract only the level columns
+level_only <- Extract_epiData(data = agg_dt, suffix = ".level")
+head(level_only, 3)
+
+# Run Quality Control (Keep rows with fewest NAs, filter bad columns)
+qc_dt <- QC_epiData(
+  data = agg_dt, 
+  top_n_rows = 5, 
+  max_col_na_ratio = 0.5
+)
+head(qc_dt, 3)
+```
+
+## 4. Dimensionality Reduction
+
+We use the QC-passed level data to perform Principal Component Analysis (PCA). The function automatically matches the data columns with our metadata.
+
+```{r dr-data}
+# Create matching metadata
+mock_meta <- data.frame(
+  SampleID = c("Tumor_1", "Tumor_2", "Normal_1", "Normal_2"),
+  Condition = c("Tumor", "Tumor", "Normal", "Normal")
+)
+
+# Extract just the level columns for PCA
+level_mat <- Extract_epiData(qc_dt, suffix = ".level")
+
+# Run PCA
+pca_res <- Reduce_epiDims(
+  mat = level_mat, 
+  meta = mock_meta, 
+  sample_col = "SampleID", 
+  group_col = "Condition", 
+  dr_method = "PCA",
+  impute_method = "mean"
+)
+
+head(pca_res)
+```
+
+## 5. Differential Epigenetic Analysis
+
+Finally, we identify differentially methylated regions (DMRs) between the Tumor and Normal groups using `Run_Diffanalysis`. We need to provide a mapping table to tell the function which column corresponds to which metric.
+
+```{r diff-analysis}
+# Create comprehensive metadata for mapping columns
+diff_meta <- data.frame(
+  SampleID = c("T1", "T2", "N1", "N2"),
+  Group = c("Tumor", "Tumor", "Normal", "Normal"),
+  col_lvl = paste0(c("Tumor.1", "Tumor.2", "Normal.1", "Normal.2"), ".level"),
+  col_met = paste0(c("Tumor.1", "Tumor.2", "Normal.1", "Normal.2"), ".meth"),
+  col_non = paste0(c("Tumor.1", "Tumor.2", "Normal.1", "Normal.2"), ".nonmeth")
+)
+
+# Run the core differential analysis algorithm
+diff_res <- Run_Diffanalysis(
+  raw_mat = qc_dt, 
+  meta = diff_meta, 
+  group_col = "Group", 
+  target_group = "Tumor", 
+  control_group = "Normal",
+  col_level = "col_lvl", 
+  col_meth = "col_met", 
+  col_nonmeth = "col_non",
+  effect_metric = "Diff", 
+  effect_th = 0.1,  # Lowered threshold for mock data
+  p_th = 0.05,
+  verbose = FALSE
+)
+
+head(diff_res)
+```
+
+## Session Information
+
+```{r session-info}
+sessionInfo()
+```
