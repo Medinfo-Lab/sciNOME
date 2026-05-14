@@ -115,9 +115,9 @@ Aggregate_epiRegions <- function(cov_dir, bed_file, n_cores = 1) {
     on.exit(parallel::stopCluster(cl), add = TRUE) # Ensure cluster is stopped even if exiting with an error
     # Load necessary packages into child processes
     parallel::clusterEvalQ(cl, {
-      library(data.table)
-      library(GenomicRanges)
-      library(IRanges)
+      requireNamespace("data.table", quietly = TRUE)
+      requireNamespace("GenomicRanges", quietly = TRUE)
+      requireNamespace("IRanges", quietly = TRUE)
     })
     # Use pbapply to show progress bar
     results_list <- pbapply::pblapply(

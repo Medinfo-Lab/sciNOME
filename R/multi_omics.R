@@ -36,7 +36,48 @@
 #'
 #' @return A merged \code{data.frame} containing integrated omics levels.
 #'
-#' Integrate RNA, DNA Methylation (CpG), and Chromatin Accessibility (GpC) Data
+#' @examples
+#' # 1. Create mock metadata
+#' meta_df <- data.frame(
+#'   group1 = c("Tumor", "Tumor", "Normal"),
+#'   sample = c("cell1", "cell2", "cell3"),
+#'   CpG_level = c("samp1", "samp2", "samp3")
+#' )
+#'
+#' # 2. Create mock region annotation
+#' region_df <- data.frame(
+#'   chr = c("chr1", "chr2"),
+#'   start = c(100, 200),
+#'   end = c(150, 250),
+#'   gene_id = c("GeneA", "GeneB")
+#' )
+#'
+#' # 3. Create mock RNA object
+#' rna_mat <- matrix(
+#'   c(10, 12, 2, 5, 6, 1), nrow = 2, byrow = TRUE,
+#'   dimnames = list(c("GeneA", "GeneB"), c("cell1", "cell2", "cell3"))
+#' )
+#' rna_obj <- list(assays = list(RNA = list(data = rna_mat)))
+#'
+#' # 4. Create mock CpG matrix (rownames match chr:start-end from region_df)
+#' cpg_mat <- matrix(
+#'   c(0.8, 0.9, 0.1, 0.7, 0.8, 0.2), nrow = 2, byrow = TRUE,
+#'   dimnames = list(c("chr1:100-150", "chr2:200-250"), c("samp1", "samp2", "samp3"))
+#' )
+#'
+#' # 5. Run Integration
+#' merged_res <- Integrate_MultiOmics(
+#'   mode = "rna_cpg",
+#'   target_group = "Tumor",
+#'   meta_df = meta_df,
+#'   group_col = "group1",
+#'   region_df = region_df,
+#'   rna_obj = rna_obj, rna_id_col = "sample",
+#'   cpg_mat = cpg_mat, cpg_id_col = "CpG_level"
+#' )
+#'
+#' head(merged_res)
+#'
 #' @importFrom dplyr select filter mutate distinct group_by summarise ungroup inner_join left_join rename first pull
 #' @importFrom Matrix rowMeans
 #' @importFrom utils head
