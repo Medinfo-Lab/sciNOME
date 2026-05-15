@@ -34,7 +34,7 @@ deps <- c("data.table", "dplyr", "ggplot2", "ggpubr", "ggridges", "patchwork",
           "IRanges", "S4Vectors", "impute")
 ```
 
-- Step 2.3: Install the Local Package
+- Step 3: Install the Local Package
 
 ```R
 install.packages("/path/to/your/download/sciNOME_latest.tar.gz", repos = NULL, type = "source")
