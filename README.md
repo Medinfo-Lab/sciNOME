@@ -16,7 +16,7 @@ BiocManager::install("sciNOME")
 BiocManager::install("Medinfo-Lab/sciNOME")
 ```
 
-If you prefer to build the package by hand, follow these steps:
+If you want to install offline, please follow the steps below:
 
 - Step 1: Download the package file
 
@@ -44,15 +44,9 @@ install.packages("/path/to/your/download/sciNOME_latest.tar.gz", repos = NULL, t
 
 **The Workflow:**
 
-![](https://imgur.com/tQcn3RL.png)
+![](https://imgur.com/qXWGDfb.png)
 
-**The Epigenomic Processing Flow:**
-
-![](https://imgur.com/9B3kq6u.png)
-
-**The Transcriptomic Processing Flow:**
-
-![](https://imgur.com/gVY0VJ0.png)
+## How to use sciNOME
 
 ```R
 
