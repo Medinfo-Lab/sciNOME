@@ -53,12 +53,12 @@ install.packages("/path/to/your/download/sciNOME_latest.tar.gz", repos = NULL, t
 library(sciNOME)
 
 # Step 1: Enter the path to the apparent group coverage file and the path to the region file, and read the transcriptome expression matrix
-cov_directoryCpG <- "../data/cov/hg19/CpG/"
-cov_directoryGpC <- "../data/cov/hg19/GpC/"
-bed_path <- "../data/region/bed.csv"
-region_data <- read.csv("../data/region/bed.csv")
-exper <- read.csv("../data/RNA_counts.csv")
-sample_data_all <- read.csv("../data/sample_data.csv")
+cov_directoryCpG <- "data/cov/CpG/"
+cov_directoryGpC <- "data/cov/GpC/"
+bed_path <- "data/region/bed.csv"
+region_data <- read.csv("data/region/bed.csv")
+exper <- read.csv("data/RNA_counts.csv")
+sample_data_all <- read.csv("data/sample_data.csv")
 
 # Step 2: Generate aggregated apparent genomic data, and create transcriptomic objects
 result_matrixCpG <- aggregate_epi_regions(
