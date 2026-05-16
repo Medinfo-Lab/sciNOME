@@ -112,10 +112,16 @@ Integrate_MultiOmics <- function(
   target_group <- trimws(as.character(target_group))
   if (target_group == "") stop("Please provide a valid target_group.")
   if (!is.data.frame(meta_df)) stop("meta_df must be a data.frame.")
-  if (!group_col %in% colnames(meta_df)) stop(sprintf("Group column not found in meta_df: %s", group_col))
 
-  meta_sub <- meta_df[trimws(as.character(meta_df[[group_col]])) == target_group, , drop = FALSE]
-  if (nrow(meta_sub) == 0) stop(sprintf("Target group '%s' not found in column %s of meta_df.", target_group, group_col))
+  # --- 新增：支持 "ALL" 全局分组的逻辑 ---
+  if (toupper(target_group) == "ALL") {
+    meta_sub <- meta_df
+    if (nrow(meta_sub) == 0) stop("The provided meta_df is empty.")
+  } else {
+    if (!group_col %in% colnames(meta_df)) stop(sprintf("Group column not found in meta_df: %s", group_col))
+    meta_sub <- meta_df[trimws(as.character(meta_df[[group_col]])) == target_group, , drop = FALSE]
+    if (nrow(meta_sub) == 0) stop(sprintf("Target group '%s' not found in column %s of meta_df.", target_group, group_col))
+  }
 
   # STEP A: Region annotation processing
   col_names <- colnames(region_df)
@@ -135,7 +141,6 @@ Integrate_MultiOmics <- function(
 
   region_map <- region_df %>%
     dplyr::select(chrdata, chrdata_nochr, GeneID = final_gene_id, GeneName = final_gene_name) %>%
-    # Thoroughly clean GeneID in the region table
     dplyr::mutate(GeneID = toupper(gsub("\\..*|_.*", "", trimws(as.character(GeneID)))),
                   GeneName = trimws(as.character(GeneName))) %>%
     dplyr::filter(GeneID != "", !is.na(GeneID))
@@ -144,7 +149,7 @@ Integrate_MultiOmics <- function(
     dplyr::select(GeneID, GeneName) %>%
     dplyr::distinct(GeneID, .keep_all = TRUE)
 
-  # STEP B: RNA Data Processing (Core fix: Smart ID shuffling and matching)
+  # STEP B: RNA Data Processing
   rna_res <- NULL
   if (mode %in% c("tri", "rna_cpg", "rna_gpc")) {
     if (is.null(rna_obj)) stop("The selected mode requires rna_obj input.")
@@ -159,42 +164,35 @@ Integrate_MultiOmics <- function(
     if (length(valid_cells) == 0) stop("No intersection between extracted RNA sample names from the master table and column names of the rna_obj matrix!")
 
     raw_rna_genes <- rownames(expr_mat)
-    # Strip .version numbers and _suffixes from matrix row names
     clean_mat_genes <- toupper(gsub("\\..*|_.*", "", trimws(raw_rna_genes)))
 
     if (!is.null(rna_diff_df)) {
       rna_diff_df[[rna_pval_col]] <- as.numeric(as.character(rna_diff_df[[rna_pval_col]]))
       rna_diff_df[[rna_logfc_col]] <- as.numeric(as.character(rna_diff_df[[rna_logfc_col]]))
-
       rna_diff_df <- rna_diff_df[which(rna_diff_df[[rna_pval_col]] < rna_pval_th & abs(rna_diff_df[[rna_logfc_col]]) > rna_logfc_th), ]
 
       gene_col <- grep("gene|id|ensembl", colnames(rna_diff_df), ignore.case = TRUE, value = TRUE)[1]
       if (is.na(gene_col)) gene_col <- colnames(rna_diff_df)[1]
 
       diff_genes_raw <- unique(trimws(as.character(rna_diff_df[[gene_col]])))
-      # Strip .version numbers and _suffixes from differential table genes
       diff_genes_clean <- toupper(gsub("\\..*|_.*", "", diff_genes_raw))
 
-      # Use clean IDs to find intersections
       common_clean_genes <- intersect(clean_mat_genes, diff_genes_clean)
 
       if (length(common_clean_genes) == 0) {
-        # 🌟 Smart Error: Lets you see immediately why they don't match!
-        stop(sprintf("No gene match! Please check the ID format.\nTop 3 genes in your expression matrix look like this: %s\nTop 3 genes in your differential table look like this: %s",
+        stop(sprintf("No gene match! Please check the ID format.\nTop 3 genes in expression matrix: %s\nTop 3 genes in differential table: %s",
                      paste(head(raw_rna_genes, 3), collapse = ", "),
                      paste(head(diff_genes_raw, 3), collapse = ", ")))
       }
-
-      # Map back to the original matrix row names with suffixes to ensure correct expression extraction
       valid_rna_genes <- raw_rna_genes[clean_mat_genes %in% common_clean_genes]
     } else {
       valid_rna_genes <- raw_rna_genes
     }
 
     sub_mat <- expr_mat[valid_rna_genes, valid_cells, drop = FALSE]
+    # 取均值（当ALL时，这里就是全部样本的总均值）
     rna_vals <- Matrix::rowMeans(sub_mat, na.rm = TRUE)
 
-    # After extracting expression, finally unify the naming to clean IDs
     final_rna_ids <- toupper(gsub("\\..*|_.*", "", trimws(rownames(sub_mat))))
 
     rna_res <- data.frame(GeneID = final_rna_ids, RNA_Exp = as.numeric(rna_vals), stringsAsFactors = FALSE) %>%
@@ -237,6 +235,7 @@ Integrate_MultiOmics <- function(
     }
 
     sub_mat <- mat[, valid_cols, drop = FALSE]
+    # 取均值（当ALL时，这里就是全部样本的总均值）
     avg_vals <- rowMeans(sub_mat, na.rm = TRUE)
 
     res_df <- data.frame(RegionID = rownames(sub_mat), value = as.numeric(avg_vals), stringsAsFactors = FALSE)
