@@ -7,13 +7,13 @@
 ***sciNOME*** is an R package for jointly analyzing transcriptomic, DNA methylation, and chromatin accessibility data. The package is designed to process sequencing data from scNOMe-seq and scRNA-seq experiments. Additionally, ***sciNOME*** converts sequencing data into region-based formats for efficient storage and subsequent analysis. The R package incorporates features such as differential analysis, dimensionality reduction analysis, and differential analysis of horizontal sites.
 
 ```R
-# From Bioconductor
+# Development version from GitHub
+BiocManager::install("Medinfo-Lab/sciNOME")
+
+# From Bioconductor (once accepted)
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install("sciNOME")
-
-# Development version from GitHub
-BiocManager::install("Medinfo-Lab/sciNOME")
 ```
 
 If you want to install offline, please follow the steps below:
