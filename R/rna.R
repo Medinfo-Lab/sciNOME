@@ -219,7 +219,7 @@ Build_RNAObject <- function(expr_mat,
     # The `is.numeric` function should return a logical value (TRUE/FALSE)
     numeric_cols <- vapply(expr_mat, is.numeric, FUN.VALUE = logical(1))
 
-    if (sum(numeric_cols) == 0) stop("Error: No numeric columns found in the expression matrix!")
+    if (sum(numeric_cols) == 0) stop(" No numeric columns found in the expression matrix!")
     expr_mat <- as.matrix(expr_mat[, numeric_cols, drop = FALSE])
   } else {
     expr_mat <- matrix(as.numeric(expr_mat), nrow = nrow(expr_mat), dimnames = dimnames(expr_mat))
@@ -346,7 +346,7 @@ ProcessQC_RNA <- function(obj,
   ]
 
   if (length(keep_cells) == 0) {
-    stop("Error: Filtering conditions are too strict! 0 cells remaining. Please relax the filtering thresholds.")
+    stop(" Filtering conditions are too strict! 0 cells remaining. Please relax the filtering thresholds.")
   }
 
   # Save filtered data
@@ -709,7 +709,7 @@ RunDEA_RNA <- function(obj,
 
   # Mandatory requirement: ident_1 cannot be null
   if (is.null(ident_1)) {
-    stop("Error: ident_1 cannot be null! A target group must be specified.")
+    stop(" ident_1 cannot be null! A target group must be specified.")
   }
   if (!(ident_1 %in% group_vec)) {
     stop(sprintf("Error: ident_1 ('%s') does not exist in column %s!", ident_1, group_col))
@@ -726,7 +726,7 @@ RunDEA_RNA <- function(obj,
 
   } else {
     # If ident_2 has a value, automatically perform ident_1 vs ident_2
-    if (ident_1 == ident_2) stop("Error: ident_1 and ident_2 cannot be the same group!")
+    if (ident_1 == ident_2) stop(" ident_1 and ident_2 cannot be the same group!")
     if (!(ident_2 %in% group_vec)) stop(sprintf("Error: ident_2 ('%s') does not exist in column %s!", ident_2, group_col))
 
     cells_2 <- rownames(meta)[which(group_vec == ident_2)]
@@ -879,9 +879,9 @@ RunPseudotime_RNA <- function(obj,
 
   # --- 1. Strictly lock filter_meta.data ---
   meta <- obj$filter_meta.data
-  if (is.null(meta)) stop("Error: filter_meta.data not found! Please run QC filtering first.")
+  if (is.null(meta)) stop(" filter_meta.data not found! Please run QC filtering first.")
   if (!(group_col %in% colnames(meta))) stop(sprintf("Error: Column name '%s' is not in filter_meta.data!", group_col))
-  if (is.null(start_clus)) stop("Error: Developmental root (start_clus) must be specified! E.g., start_clus = 'Cluster_1'")
+  if (is.null(start_clus)) stop(" Developmental root (start_clus) must be specified! E.g., start_clus = 'Cluster_1'")
 
   # --- 2. Get root samples ---
   group_vec <- as.character(meta[[group_col]])
@@ -901,7 +901,7 @@ RunPseudotime_RNA <- function(obj,
 
   # Core alignment: Only keep coordinates of samples present in filter_meta.data
   valid_cells <- intersect(rownames(meta), rownames(raw_coords))
-  if (length(valid_cells) == 0) stop("Error: Sample names in filter_meta.data and dimensionality reduction coordinates do not match at all!")
+  if (length(valid_cells) == 0) stop(" Sample names in filter_meta.data and dimensionality reduction coordinates do not match at all!")
 
   coords <- raw_coords[valid_cells, 1:2, drop = FALSE] # Force restriction to 2D space for pseudotime
   start_cells <- intersect(start_cells, valid_cells)   # Ensure root cells are valid

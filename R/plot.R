@@ -37,7 +37,7 @@ PlotQC_RNA <- function(obj,
   if (!inherits(obj, "RNA")) stop("The input must be a RNA object!")
 
   meta <- obj$meta.data
-  if (is.null(meta)) stop("Error: meta.data not found. Please check that the object is complete.")
+  if (is.null(meta)) stop(" meta.data not found. Please check that the object is complete.")
 
   # --- 1. Check and extract the feature columns to be plotted ---
   missing_features <- setdiff(features, colnames(meta))
@@ -183,7 +183,7 @@ PlotDimRed_RNA <- function(obj,
 
   # Defensive programming: only take samples present in both to prevent cbind dimension mismatch errors
   common_cells <- intersect(rownames(coords), rownames(meta))
-  if (length(common_cells) == 0) stop("Error: Sample names in the coordinate matrix and Metadata do not match at all!")
+  if (length(common_cells) == 0) stop(" Sample names in the coordinate matrix and Metadata do not match at all!")
 
   coords_sub <- coords[common_cells, 1:2, drop = FALSE] # Force taking the first two dimensions for 2D plotting
   meta_sub <- meta[common_cells, , drop = FALSE]
@@ -467,7 +467,7 @@ PlotPseudo_RNA <- function(obj) {
   if (!inherits(obj, "RNA")) stop("Input must be a RNA object!")
 
   if (is.null(obj$reductions$pseudotime)) {
-    stop("Error: Pseudotime data not found. Please run the pseudotime inference function first.")
+    stop(" Pseudotime data not found. Please run the pseudotime inference function first.")
   }
 
   pt_res <- obj$reductions$pseudotime
@@ -492,7 +492,7 @@ PlotPseudo_RNA <- function(obj) {
 
   # Defensively match cell names
   common_cells <- intersect(rownames(coords), rownames(meta))
-  if (length(common_cells) == 0) stop("Error: Coordinates and Metadata cell names do not match!")
+  if (length(common_cells) == 0) stop(" Coordinates and Metadata cell names do not match!")
 
   coords <- coords[common_cells, , drop = FALSE]
   meta <- meta[common_cells, , drop = FALSE]
