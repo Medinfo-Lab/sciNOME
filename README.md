@@ -46,153 +46,160 @@ install.packages("/path/to/your/download/sciNOME_latest.tar.gz", repos = NULL, t
 
 ![](https://imgur.com/qXWGDfb.png)
 
-## How to use sciNOME
+## Quick Start
 
 ```R
-
 library(sciNOME)
+library(dplyr)
 
-# Step 1: Enter the path to the apparent group coverage file and the path to the region file, and read the transcriptome expression matrix
-cov_directoryCpG <- "data/cov/CpG/"
-cov_directoryGpC <- "data/cov/GpC/"
-bed_path <- "data/region/bed.csv"
-region_data <- read.csv("data/region/bed.csv")
-exper <- read.csv("data/RNA_counts.csv")
-sample_data_all <- read.csv("data/sample_data.csv")
+# Step 1:
+# 1.1 Dynamically obtain the absolute path of test data included in the package
+rna_path <- system.file("extdata", "RNA_counts.txt", package = "sciNOME")
+meta_path <- system.file("extdata", "metadata.csv", package = "sciNOME")
+bed_path <- system.file("extdata", "target_promoters.bed", package = "sciNOME")
+cpg_dir <- system.file("extdata/cpg_cov", package = "sciNOME")
+gpc_dir <- system.file("extdata/gpc_cov", package = "sciNOME")
 
-# Step 2: Generate aggregated apparent genomic data, and create transcriptomic objects
-result_matrixCpG <- aggregate_epi_regions(
-  cov_dir = cov_directoryCpG,
-  bed_file = bed_path,
-  n_cores = 8
-)
-result_matrixGpC <- aggregate_epi_regions(
-  cov_dir = cov_directoryGpC,
-  bed_file = bed_path,
-  n_cores = 8
-)
+# 1.2 Read basic expression profiles, metadata, and target interval files
+rna_counts <- read.table(rna_path, sep="\t", header=TRUE)
+metadata <- read.csv(meta_path)
+bed_data <- read.table(bed_path,header = T)
 
+# Step 2:
+# 2.1 Build lightweight RNA analysis objects
 RNA_obj <- Build_RNAObject(
-  expr_mat = exper,        			# Expression Matrix
-  meta_data = sample_data_all,      # Grouped Data Frames
-  meta_id_col = "Sample_Geo",       # The columns in the grouped data are used to match the column names in the matrix
-  min_cells = 5,                    # (Optional) Remove genes that are completely non-expressed
-  min_features = 200,               # (Optional) Remove completely empty samples
+  expr_mat = rna_counts,            # Expression Matrix
+  meta_data = metadata,             # Grouped Data Frames
+  meta_id_col = "RNA_ID",           # The columns in the grouped data are used to match the column names in the matrix
+  min_cells = 0,                    # (Optional) Remove genes that are completely non-expressed
+  min_features = 0,                 # (Optional) Remove completely empty samples
   project_name = "RNA_object"
 )
+PlotQC_RNA(RNA_obj,"CellType")
 
-# Step 3: Filter the epigenomic aggregation data and the transcriptomic objects
-qc_result_matrixCpG <- QC_epiData(
-  data = result_matrixCpG,
-  top_n_rows = 5000,
-  max_col_na_ratio = 0.8
-)
-qc_result_matrixGpC <- QC_epiData(
-  data = result_matrixGpC,
-  top_n_rows = 5000,
-  max_col_na_ratio = 0.8
-)
-
-PlotQC_RNA(hg19_RNA_obj,"group")
+# 2.2 Data Filtering and Standardization
 RNA_obj <- ProcessQC_RNA(
   obj = RNA_obj,
   mt_pattern = "^MT-",          # Human mitochondrial prefix
-  min_nCount = 100,             # At least 100 UMI
-  max_nCount = 8000000,         # Up to 8,000,000 UMI
-  min_nFeature = 5000,          # Express at least 5,000 genes
-  max_nFeature = 12500,         # Up to 12,500 genes
+  min_nFeature = 0,             # Express at least 0 genes
+  max_nFeature = 6000,          # Up to 6000 genes
+  min_nCount = 0,               # At least 0 UMI
+  max_nCount = 100000,          # Up to 100000 UMI
   max_mt = 10,                  # The proportion of mitochondria must not exceed 10%
   norm_method = "LogNormalize", # Standardized Methods
   do_scale = TRUE               # Whether to scale
 )
 
-# RNA Dimensionality reduction analysis option (option)
-hg19_RNA_obj <- RunDimReduction_RNA(
-  obj = hg19_RNA_obj,
+# 2.3 Dimensionality Reduction Analysis (PCA)
+RNA_obj <- RunDimReduction_RNA(
+  obj = RNA_obj,
   method = "PCA",
+  n_hvg = 2000,
   layer_name = "data",
-  pca_rank = 50,
+  pca_rank = 10,
   umap_neighbors = 100,
   umap_mindist = 2
 )
-PlotDimRed_RNA(hg19_RNA_obj,"PCA","group",show_cluster = F)
+PlotDimRed_RNA(RNA_obj,"PCA","CellType",show_cluster = F)
 
-# Step 3: Extract the level data for each sample
+# 2.4 Differential Expression Analysis (DEA)
+RNA_diff <- RunDEA_RNA(
+  obj = RNA_obj,
+  group_col = "CellType",
+  ident_1 = "CellType.A"
+  # ident_2 = "CellType.B"
+)
+PlotVolcano_RNA(RNA_diff,
+                fc_cut = 0.5,
+                p_cut = 0.05)
+
+# Step 3:
+# 3.1 Aggregate apparent site data based on the given interval
+result_matrixCpG <- Aggregate_epiRegions(
+  cov_dir = gpc_dir,
+  bed_file = bed_path,
+  n_cores = 8
+)
+result_matrixGpC <- Aggregate_epiRegions(
+  cov_dir = gpc_dir,
+  bed_file = bed_path,
+  n_cores = 8
+)
+
+# 3.2 Missing Value Quality Control and Filtering
+qc_result_matrixCpG <- QC_epiData(
+  data = result_matrixCpG,
+  top_n_rows = 2000,
+  max_col_na_ratio = 0.8
+)
+qc_result_matrixGpC <- QC_epiData(
+  data = result_matrixGpC,
+  top_n_rows = 2000,
+  max_col_na_ratio = 0.8
+)
+
+# 3.3 Extract methylation/open chromatin level matrix for downstream dimensionality reduction
 qc_result_matrixCpG_level <- Extract_epiData(qc_result_matrixCpG,".level")
 qc_result_matrixGpC_level <- Extract_epiData(qc_result_matrixGpC,".level")
 
-# Regional dimensionality reduction analysis (option)
+# 3.4 Multidimensional Scaling (MDS) for Phenotypic Data
 MDS_df_CpG <- Reduce_epiDims(
   qc_result_matrixCpG_level, # choose GpC data (option)
-  sample_data_all,
-  "level","group",
+  metadata,
+  "CpG_level","CellType",
   dr_method = "MDS",
   impute_method = "knn"
 )
-PlotDimRed_Epi(MDS_df_CpG,"group","MDS")
+PlotDimRed_Epi(MDS_df_CpG,"CellType","MDS")
 
-# Step 4: RNA, DNA Methylation, Chromatin Accessibility difference analysis
-RNA_diff <- RunDEA_RNA(
-  obj = mm10_RNA_obj,
-  group_col = "group",
-  ident_1 = "DAC"       
-  # ident_2 = "Unt"
-)
-
-# Differential gene plot (option)
-RNA_diff_choose <- RNA_diff %>%
-  filter(p_val < 0.05 & abs(avg_log2FC) > 1)
-PlotVolcano_RNA(RNA_diff_choose,
-                fc_cut = 2,
-                p_cut = 0.005)
-
+# 3.5 Identifying Differentially Methylated Regions (DMRs)
 CpG_diff <- Run_Diffanalysis(
-    raw_mat = qc_result_matrixCpG,
-    meta = sample_data_epiCpG,
-    group_col = "group",
-    target_group = "AZA",
-    # control_group = "Unt",
-    col_level = "level",
-    col_meth = "meth",
-    col_nonmeth = "nonmeth")
+  raw_mat = qc_result_matrixCpG,
+  meta = metadata,
+  group_col = "CellType",
+  target_group = "CellType.A",
+  # control_group = "Unt",
+  col_level = "CpG_level",
+  col_meth = "CpG_meth",
+  col_nonmeth = "CpG_nonmeth")
 # DMRs plot (option)
-CpG_diff_choose <- CpG_diff %>%
-  filter(P.Value < 0.05)
-PlotVolcano_Epi(CpG_diff_choose,th_effect = 0.05,title = "DAC vs other CpG Volcano") # Differential region analysis (DMRs)
+PlotVolcano_Epi(CpG_diff,th_effect = 0.05,title = "CellType.A vs other CpG Volcano") # Differential region analysis (DMRs)
 
+# 3.6 Identifying Differentially Accessible Chromatin Regions (DARs)
 GpC_diff <- Run_Diffanalysis(
-    raw_mat = qc_result_matrixGpC,
-    meta = sample_data_all,
-    group_col = "group",
-    target_group = "DAC",
-    # control_group = "Unt",
-    col_level = "level",
-    col_meth = "meth",
-    col_nonmeth = "nonmeth")
+  raw_mat = qc_result_matrixGpC,
+  meta = metadata,
+  group_col = "CellType",
+  target_group = "CellType.A",
+  # control_group = "Unt",
+  col_level = "CpG_level",
+  col_meth = "CpG_meth",
+  col_nonmeth = "CpG_nonmeth")
 # DARs plot (option)
-GpC_diff_choose <- GpC_diff %>%
-  filter(P.Value < 0.05)
-PlotVolcano_Epi(GpC_diff_choose,th_effect = 0.05,title = "DAC vs other GpC Volcano") # Differential region analysis (DARs)
+PlotVolcano_Epi(GpC_diff,th_effect = 0.05,title = "CellType.A vs other GpC Volcano") # Differential region analysis (DARs)
 
-# Step 5: Multi-omics data integration
-result_df <- Integrate_MultiOmics(
-  mode = "tri",                        # Integration mode
-  target_group = "DAC",                # Target group
-  meta_df = sample_data_all,           # Grouped Data Frames
-  group_col = "group",                 # Columns that define groups
-  region_df = region_data,             # Regional Information Table
-  rna_obj = RNA_obj,              	   # Transcriptomic objects
-  rna_id_col = "Sample_Geo_RNA",       # The column name containing the RNA groups
-  # rna_diff_df = RNA_diff,			   # RNA differential data (option)
-  cpg_mat = qc_result_matrixCpG_level, # The level data for each CpG sample
-  cpg_id_col = "CpG_level",            # The column name containing the CpG groups CpG
-  # cpg_diff_df = CpG_diff,			   # DNA methylation differential data  (option)
-  gpc_mat = qc_result_matrixGpC_level, # The level data for each GpC sample
-  gpc_id_col = "GpC_level"             # The column name containing the CpG groups GpC
-  # gpc_diff_df = GpC_diff,            # Chromatin accessibility differential data  (option)
+# Step 4:
+# 4.1 Multi-omics data integration
+integrated_obj <- Integrate_MultiOmics(
+  mode = "tri",                        	# Integration mode
+  target_group = "ALL",              	# Target group
+  meta_df = metadata,                  	# Grouped Data Frames
+  group_col = "CellType",              	# Columns that define groups
+  region_df = bed_data,                	# Regional Information Table
+  rna_obj = RNA_obj,              	   	# Transcriptomic objects
+  rna_id_col = "RNA_ID",               	# The column name containing the RNA groups
+  # rna_diff_df = RNA_diff,			   	# RNA differential data (option)
+  cpg_mat = qc_result_matrixCpG_level,  # The level data for each CpG sample
+  cpg_id_col = "CpG_level",            	# The column name containing the CpG groups CpG
+  # cpg_diff_df = CpG_diff,			   	# DNA methylation differential data  (option)
+  gpc_mat = qc_result_matrixGpC_level,  # The level data for each GpC sample
+  gpc_id_col = "GpC_level"             	# The column name containing the CpG groups GpC
+  # gpc_diff_df = GpC_diff,            	# Chromatin accessibility differential data  (option)
 )
 
-# Step 6: Creating multi-omics statistical plots
-PlotOmicsMatrix(result_df)
-PlotOmicsScatter(result_df)
+# 4.2 Draw multi-omics level heatmaps / matrix plots
+PlotOmicsMatrix(integrated_obj)
+
+# 4.3 Draw multi-omics scatter correlation plots (e.g., Methylation vs Expression vs Accessibility)
+PlotOmicsScatter(integrated_obj)
 ```
