@@ -48,11 +48,18 @@ install.packages("/path/to/your/download/sciNOME_latest.tar.gz", repos = NULL, t
 
 ## Quick Start
 
-```R
+## Loading the package
+
+```
 library(sciNOME)
 library(dplyr)
+```
 
-# Step 1:
+**Here, we will use the built-in data as an example.**
+
+## Step 1 — load data
+
+```R
 # 1.1 Dynamically obtain the absolute path of test data included in the package
 rna_path <- system.file("extdata", "RNA_counts.txt", package = "sciNOME")
 meta_path <- system.file("extdata", "metadata.csv", package = "sciNOME")
@@ -64,8 +71,11 @@ gpc_dir <- system.file("extdata/gpc_cov", package = "sciNOME")
 rna_counts <- read.table(rna_path, sep="\t", header=TRUE)
 metadata <- read.csv(meta_path)
 bed_data <- read.table(bed_path,header = T)
+```
 
-# Step 2:
+## Step 2 — Transcriptome Analysis
+
+```R
 # 2.1 Build lightweight RNA analysis objects
 RNA_obj <- Build_RNAObject(
   expr_mat = rna_counts,            # Expression Matrix
@@ -112,8 +122,11 @@ RNA_diff <- RunDEA_RNA(
 PlotVolcano_RNA(RNA_diff,
                 fc_cut = 0.5,
                 p_cut = 0.05)
+```
 
-# Step 3:
+## Step 3 — Epigenomic Analysis
+
+```R
 # 3.1 Aggregate apparent site data based on the given interval
 result_matrixCpG <- Aggregate_epiRegions(
   cov_dir = gpc_dir,
@@ -177,8 +190,11 @@ GpC_diff <- Run_Diffanalysis(
   col_nonmeth = "CpG_nonmeth")
 # DARs plot (option)
 PlotVolcano_Epi(GpC_diff,th_effect = 0.05,title = "CellType.A vs other GpC Volcano") # Differential region analysis (DARs)
+```
 
-# Step 4:
+## Step 4 — Multi-omics integrated analysis
+
+```R
 # 4.1 Multi-omics data integration
 integrated_obj <- Integrate_MultiOmics(
   mode = "tri",                        	# Integration mode
@@ -203,3 +219,7 @@ PlotOmicsMatrix(integrated_obj)
 # 4.3 Draw multi-omics scatter correlation plots (e.g., Methylation vs Expression vs Accessibility)
 PlotOmicsScatter(integrated_obj)
 ```
+
+# License
+
+MIT License — see [LICENSE](LICENSE) for details.
