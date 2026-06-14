@@ -1,6 +1,6 @@
 Package: sciNOME
 Title: Region-Centric Integration for Single-Cell Multi-Omics
-Version: 0.99.1
+Version: 0.99.0
 Authors@R: 
     c(person(given = "Shitao",
              family = "Zhou",
