@@ -1,8 +1,6 @@
-# sciNOME: Integrative Analysis of Nucleosome Occupancy, Genome Methylation and Expression across Single-Cells
+# sciNOME: an R Framework for Region-Centric Integration of Chromatin Accessibility, DNA Methylation, and Gene Expression in Single-Cell
 
 # Installation instructions
-
-***sciNOME**: A Region-Centric Framework for Integrative Analysis of Single-Cell Epigenomic and Transcriptomic Data.* 
 
 ***sciNOME*** is an R package for jointly analyzing transcriptomic, DNA methylation, and chromatin accessibility data. The package is designed to process sequencing data from scNOMe-seq and scRNA-seq experiments. Additionally, ***sciNOME*** converts sequencing data into region-based formats for efficient storage and subsequent analysis. The R package incorporates features such as differential analysis, dimensionality reduction analysis, and differential analysis of horizontal sites.
 
