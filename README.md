@@ -44,7 +44,7 @@ install.packages("/path/to/your/download/sciNOME_latest.tar.gz", repos = NULL, t
 
 **The Workflow:**
 
-![](https://imgur.com/qXWGDfb.png)
+![](https://imgur.com/RpXeVJ7.png)
 
 ## Quick Start
 
