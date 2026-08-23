@@ -1,0 +1,177 @@
+---
+title: "Epigenetic Data Processing and Analysis using sciNOME"
+author: "Shitao Zhou"
+date: "`r Sys.Date()`"
+output: 
+  BiocStyle::html_document:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Epigenetic Data Processing and Analysis using sciNOME}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = TRUE,     # CRITICAL: Ensures all code runs during BiocCheck
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Introduction
+
+The `sciNOME` package provides an end-to-end pipeline for processing single-cell or bulk epigenetic data (DNA methylation/Chromatin accessibility). This vignette demonstrates the complete workflow:
+
+1. Aggregating raw Bismark coverage files (`.cov.gz`) into genomic regions.
+2. Extracting specific metric matrices.
+3. Performing quality control (QC).
+4. Running dimensionality reduction (PCA).
+5. Performing differential epigenetic analysis.
+
+## 1. Setup and Mock Data Generation
+
+To demonstrate the workflow, we will simulate a tiny dataset containing 4 samples (2 Tumor, 2 Normal) and 5 genomic regions. We create temporary `.cov` and `.bed` files.
+
+```{r load-pkg}
+library(sciNOME)
+library(data.table)
+
+# Create a temporary directory for our mock data
+tmp_dir <- tempdir()
+
+# 1. Create a mock BED file (5 regions)
+mock_bed <- data.frame(
+  chr = "chr1", 
+  start = seq(1, 401, 100), 
+  end = seq(100, 500, 100)
+)
+bed_path <- file.path(tmp_dir, "regions.bed")
+write.table(mock_bed, bed_path, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
+
+# 2. Create mock Bismark .cov files for 4 samples
+samples <- c("Tumor_1", "Tumor_2", "Normal_1", "Normal_2")
+set.seed(123)
+
+for (samp in samples) {
+  # Generate a 6-column mock Bismark coverage file
+  mock_cov <- data.frame(
+    chr = "chr1", 
+    start = seq(50, 450, 100),       # Column 2
+    end = seq(50, 450, 100),         # Column 3
+    meth_perc = 50,                  # Column 4 (Dummy placeholder)
+    meth = sample(10:50, 5, replace=TRUE),   # Column 5: methylated count
+    unmeth = sample(10:50, 5, replace=TRUE)  # Column 6: unmethylated count
+  )
+  
+  # Make Tumor slightly more methylated for differential analysis later
+  if(grepl("Tumor", samp)) mock_cov$meth <- mock_cov$meth + 30 
+  
+  cov_path <- file.path(tmp_dir, paste0(samp, ".cov"))
+  write.table(mock_cov, cov_path, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
+}
+```
+
+## 2. Data Aggregation
+
+We use `Aggregate_epiRegions` to map the `.cov` files to the BED regions.
+
+```{r aggregate}
+agg_dt <- Aggregate_epiRegions(
+  cov_dir = tmp_dir, 
+  bed_file = bed_path, 
+  n_cores = 1
+)
+
+# Display the first few rows
+head(agg_dt)
+```
+
+## 3. Extracting specific Metrics and Quality Control
+
+We can extract just the methylation level matrix using `Extract_epiData`. Before that, let's introduce an `NA` value to demonstrate the QC function.
+
+```{r qc-data}
+# Introduce an NA to simulate missing data
+agg_dt[1, "Tumor.1.level"] <- NA 
+
+# Extract only the level columns
+level_only <- Extract_epiData(data = agg_dt, suffix = ".level")
+head(level_only, 3)
+
+# Run Quality Control (Keep rows with fewest NAs, filter bad columns)
+qc_dt <- QC_epiData(
+  data = agg_dt, 
+  top_n_rows = 5, 
+  max_col_na_ratio = 0.5
+)
+head(qc_dt, 3)
+```
+
+## 4. Dimensionality Reduction
+
+We use the QC-passed level data to perform Principal Component Analysis (PCA). The function automatically matches the data columns with our metadata.
+
+```{r dr-data}
+# Create matching metadata
+mock_meta <- data.frame(
+  SampleID = c("Tumor_1", "Tumor_2", "Normal_1", "Normal_2"),
+  Condition = c("Tumor", "Tumor", "Normal", "Normal")
+)
+
+# Extract just the level columns for PCA
+level_mat <- Extract_epiData(qc_dt, suffix = ".level")
+
+# Run PCA
+pca_res <- Reduce_epiDims(
+  mat = level_mat, 
+  meta = mock_meta, 
+  sample_col = "SampleID", 
+  group_col = "Condition", 
+  dr_method = "PCA",
+  impute_method = "mean"
+)
+
+head(pca_res)
+```
+
+## 5. Differential Epigenetic Analysis
+
+Finally, we identify differentially methylated regions (DMRs) between the Tumor and Normal groups using `Run_Diffanalysis`. We need to provide a mapping table to tell the function which column corresponds to which metric.
+
+```{r diff-analysis}
+# Create comprehensive metadata for mapping columns
+diff_meta <- data.frame(
+  SampleID = c("T1", "T2", "N1", "N2"),
+  Group = c("Tumor", "Tumor", "Normal", "Normal"),
+  col_lvl = paste0(c("Tumor.1", "Tumor.2", "Normal.1", "Normal.2"), ".level"),
+  col_met = paste0(c("Tumor.1", "Tumor.2", "Normal.1", "Normal.2"), ".meth"),
+  col_non = paste0(c("Tumor.1", "Tumor.2", "Normal.1", "Normal.2"), ".nonmeth")
+)
+
+# Run the core differential analysis algorithm
+diff_res <- Run_Diffanalysis(
+  raw_mat = qc_dt, 
+  meta = diff_meta, 
+  group_col = "Group", 
+  target_group = "Tumor", 
+  control_group = "Normal",
+  col_level = "col_lvl", 
+  col_meth = "col_met", 
+  col_nonmeth = "col_non",
+  effect_metric = "Diff", 
+  effect_th = 0.1,  # Lowered threshold for mock data
+  p_th = 0.05,
+  verbose = FALSE
+)
+
+head(diff_res)
+```
+
+## Session Information
+
+```{r session-info}
+sessionInfo()
+```
