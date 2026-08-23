@@ -1,0 +1,163 @@
+---
+title: "Single-Cell RNA Analysis Pipeline in sciNOME"
+author: "Shitao Zhou"
+date: "`r Sys.Date()`"
+output: 
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Single-Cell RNA Analysis Pipeline in sciNOME}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = TRUE,       # CRITICAL: Ensures code is executed during BiocCheck
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Introduction
+
+The `sciNOME` package provides an ultra-fast, lightweight, and robust pipeline for processing Single-Cell RNA-seq data. This vignette demonstrates the complete standard workflow, from creating the `RNA` object to trajectory inference, using a lightweight simulated dataset.
+
+```{r load-pkg}
+library(sciNOME)
+```
+
+## 1. Data Preparation
+
+To ensure this vignette compiles rapidly without requiring external downloads, we simulate a small single-cell expression matrix (50 genes x 50 cells) and matching metadata. 
+
+We artificially increase the expression of specific genes in the first 25 cells to simulate distinct cell populations.
+
+```{r mock-data}
+set.seed(42)
+# Simulate a 50x50 count matrix
+mock_counts <- matrix(rpois(2500, lambda = 5), nrow = 50, ncol = 50)
+
+# Inject artificial differential expression for distinct clusters
+mock_counts[1:10, 1:25] <- mock_counts[1:10, 1:25] + 15 
+
+rownames(mock_counts) <- c("MT-ND1", "MT-ND2", paste0("Gene_", 3:50))
+colnames(mock_counts) <- paste0("Cell_", 1:50)
+
+# Simulate basic metadata
+mock_meta <- data.frame(
+  Cell_ID = paste0("Cell_", 1:50),
+  Batch = rep(c("Batch_1", "Batch_2"), times = 25)
+)
+```
+
+## 2. Object Construction and QC
+
+We build the `RNA` object and perform quality control (QC) and normalization in just two steps. We set the filtering thresholds to `0` here to accommodate the tiny mock dataset.
+
+```{r build-qc}
+# Build the object
+rna_obj <- Build_RNAObject(
+  expr_mat = mock_counts,
+  meta_data = mock_meta,
+  meta_id_col = "Cell_ID",
+  min_cells = 0,
+  min_features = 0,
+  mt_pattern = "^MT-"
+)
+
+# Process QC and LogNormalization (Skip scaling for speed in this example)
+rna_obj <- ProcessQC_RNA(
+  obj = rna_obj,
+  mt_pattern = "^MT-",
+  min_nCount = 0, 
+  min_nFeature = 0, 
+  max_mt = 100,
+  norm_method = "LogNormalize",
+  do_scale = FALSE 
+)
+
+# Check processed metadata
+head(rna_obj$filter_meta.data, 3)
+```
+
+## 3. Dimensionality Reduction
+
+Next, we identify Highly Variable Genes (HVGs) and perform Principal Component Analysis (PCA).
+
+```{r dim-red}
+rna_obj <- RunDimReduction_RNA(
+  obj = rna_obj,
+  method = "PCA",
+  layer_name = "data",
+  n_hvg = 20,       # Use top 20 HVGs for this tiny dataset
+  pca_rank = 5      # Compute top 5 PCs
+)
+
+# Preview PCA coordinates
+head(rna_obj$reductions$pca, 3)
+```
+
+## 4. Unsupervised Clustering
+
+We use hierarchical clustering (which is extremely fast and stable for small data) to identify cell clusters based on the PCA space.
+
+```{r clustering}
+rna_obj <- RunClustering_RNA(
+  obj = rna_obj,
+  reduction = "pca",
+  method = "hierarchical",
+  cluster_k = 2      # We expect 2 clusters due to our artificial injection
+)
+
+# Check cluster distribution
+table(rna_obj$filter_meta.data$Auto_Cluster)
+```
+
+## 5. Differential Expression Analysis (DEA)
+
+We perform an extremely fast Wilcoxon Rank Sum Test to find marker genes between the identified clusters.
+
+```{r dea}
+dea_res <- RunDEA_RNA(
+  obj = rna_obj,
+  layer_name = "data",
+  group_col = "Auto_Cluster",
+  ident_1 = "Cluster_1",
+  ident_2 = "Cluster_2",
+  min_pct = 0,          # Relaxed for mock data
+  logfc_thresh = 0      # Relaxed for mock data
+)
+
+# Display top 5 differentially expressed genes
+head(dea_res, 5)
+```
+
+## 6. Trajectory Inference (Pseudotime)
+
+Finally, we infer the developmental trajectory (Pseudotime) using the PCA coordinates, starting from `Cluster_1`.
+
+```{r pseudotime}
+# We wrap this in a check to ensure 'princurve' is available
+if (requireNamespace("princurve", quietly = TRUE)) {
+  rna_obj <- RunPseudotime_RNA(
+    obj = rna_obj,
+    reduction = "pca",
+    group_col = "Auto_Cluster",
+    start_clus = "Cluster_1",
+    algorithm = "cluster"
+  )
+  
+  # Check assigned pseudotime values
+  head(rna_obj$filter_meta.data$Pseudotime)
+}
+```
+
+## Session Information
+
+```{r session-info}
+sessionInfo()
+```
