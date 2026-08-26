@@ -51,9 +51,9 @@ Aggregate_epiRegions <- function(cov_dir, bed_file, n_cores = 1) {
   }
   # 2. Read and process BED file (build master GRanges)
   message(sprintf("Loading BED file: %s", bed_file))
-  bed_df <- data.table::fread(bed_file, select = 1:3, nThread = 1)
+  bed_df <- data.table::fread(bed_file, select = seq_len(3L), nThread = 1L)
   # bed_df <- bed_data[,c(1:3)]
-  data.table::setnames(bed_df, 1:3, c("chr", "start", "end"))
+  data.table::setnames(bed_df, seq_len(3L), c("chr", "start", "end"))
   bed_df[, region_id := paste0(chr, ":", start, "-", end)]
   master_bed_gr <- GenomicRanges::GRanges(
     seqnames = bed_df$chr,
@@ -297,7 +297,7 @@ QC_epiData <- function(data,
   ordered_indices <- order(row_na_counts, decreasing = FALSE)
   # Extract the top N rows
   keep_n <- min(top_n_rows, nrow(dt))
-  top_indices <- ordered_indices[1:keep_n]
+  top_indices <- ordered_indices[seq_len(keep_n)]
   dt_row_filtered <- dt[top_indices]
   message(sprintf(" -> Kept %d highest-quality regions.", nrow(dt_row_filtered)))
 
@@ -732,7 +732,7 @@ Run_Diffanalysis <- function(raw_mat,
   p_values <- rep(1, length(valid_regions))
   n_test <- length(valid_regions)
 
-  for (i in 1:n_test) {
+  for (i in seq_len(n_test)) {
     mat <- matrix(c(t_site_sum[i], t_non_sum[i], c_site_sum[i], c_non_sum[i]), nrow=2)
     if(sum(mat) > 0) {
       try({ p_values[i] <- fisher.test(mat)$p.value }, silent = TRUE)

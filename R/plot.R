@@ -89,7 +89,7 @@ PlotQC_RNA <- function(obj,
 
   if (num_groups <= length(sci_palette)) {
     # If the number of groups is <= 12, extract the primary colors strictly in order
-    dynamic_colors <- sci_palette[1:num_groups]
+    dynamic_colors <- sci_palette[seq_len(num_groups)]
   } else {
     # If the number of groups is > 12, generate a new set of colors with smooth transitions using an interpolation algorithm
     dynamic_colors <- grDevices::colorRampPalette(sci_palette)(num_groups)
@@ -185,7 +185,7 @@ PlotDimRed_RNA <- function(obj,
   common_cells <- intersect(rownames(coords), rownames(meta))
   if (length(common_cells) == 0) stop(" Sample names in the coordinate matrix and Metadata do not match at all!")
 
-  coords_sub <- coords[common_cells, 1:2, drop = FALSE] # Force taking the first two dimensions for 2D plotting
+  coords_sub <- coords[common_cells, seq_len(2L), drop = FALSE] # Force taking the first two dimensions for 2D plotting
   meta_sub <- meta[common_cells, , drop = FALSE]
 
   plot_df <- cbind(as.data.frame(coords_sub), meta_sub)
@@ -209,7 +209,7 @@ PlotDimRed_RNA <- function(obj,
   # Upgraded color extraction function, accepts specified palette as parameter
   get_dynamic_colors <- function(n, base_palette) {
     if (n <= length(base_palette)) {
-      return(base_palette[1:n])
+      return(base_palette[seq_len(n)])
     } else {
       return(grDevices::colorRampPalette(base_palette)(n)) # Auto-interpolate when exceeding 12
     }
@@ -483,7 +483,7 @@ PlotPseudo_RNA <- function(obj) {
   }
 
   # --- 2. Data cleaning and merging ---
-  coords <- as.data.frame(coords_raw[, 1:2])
+  coords <- as.data.frame(coords_raw[, seq_len(2L), drop = FALSE])
   colnames(coords) <- c("Dim1", "Dim2")
   coords$Pseudotime <- pt_res$pseudotime
 
@@ -514,7 +514,7 @@ PlotPseudo_RNA <- function(obj) {
 
   n_clusters <- length(levels(coords$Cluster))
   dynamic_colors <- if (n_clusters <= length(sci_palette)) {
-    sci_palette[1:n_clusters]
+    sci_palette[seq_len(n_clusters)]
   } else {
     grDevices::colorRampPalette(sci_palette)(n_clusters)
   }
@@ -707,7 +707,7 @@ PlotLandscape_Epi <- function(mat,
                  "#7E6148FF", "#B09C85FF", "#FF7F00", "#6A3D9A")
 
   get_dynamic_colors <- function(n, base_palette) {
-    if (n <= length(base_palette)) return(base_palette[1:n])
+    if (n <= length(base_palette)) return(base_palette[seq_len(n)])
     return(grDevices::colorRampPalette(base_palette)(n))
   }
   dynamic_colors <- get_dynamic_colors(n_groups, palette_1)
@@ -803,7 +803,7 @@ PlotDimRed_Epi <- function(dr_data,
   if (n_groups > length(sci_palette)) {
     dynamic_colors <- grDevices::colorRampPalette(sci_palette)(n_groups)
   } else {
-    dynamic_colors <- sci_palette[1:n_groups]
+    dynamic_colors <- sci_palette[seq_len(n_groups)]
   }
 
   # --- 5. Smart determination of whether to draw confidence ellipses ---

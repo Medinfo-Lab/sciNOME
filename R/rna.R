@@ -132,7 +132,7 @@ AddMetaData_RNA <- function(object, meta_data, id_col = NULL, group_cols = NULL)
     for (col in group_cols) {
       vec <- meta_data[[col]]
       if (length(vec) != length(cell_names)) {
-        stop(paste("The length of column", col, "(", length(vec), ") does not match the number of samples (", length(cell_names), ")."))
+        stop(sprintf("The length of column", col, "(", length(vec), ") does not match the number of samples (", length(cell_names), ")."))
       }
       current_meta[[col]] <- vec
     }
@@ -230,10 +230,10 @@ Build_RNAObject <- function(expr_mat,
     message("Warning: The matrix contains NA missing values, automatically replacing NA with 0...")
     expr_mat[is.na(expr_mat)] <- 0
   }
-  if (is.null(colnames(expr_mat))) colnames(expr_mat) <- paste0("Sample_", 1:ncol(expr_mat))
-  if (is.null(rownames(expr_mat))) rownames(expr_mat) <- paste0("Gene_", 1:nrow(expr_mat))
+  if (is.null(colnames(expr_mat))) colnames(expr_mat) <- paste0("Sample_", seq_len(ncol(expr_mat)))
+  if (is.null(rownames(expr_mat))) rownames(expr_mat) <- paste0("Gene_", seq_len(nrow(expr_mat)))
   if (any(is.na(colnames(expr_mat)))) {
-    colnames(expr_mat)[is.na(colnames(expr_mat))] <- paste0("UnknownSample_", 1:sum(is.na(colnames(expr_mat))))
+    colnames(expr_mat)[is.na(colnames(expr_mat))] <- paste0("UnknownSample_", seq_len(sum(missing_cols)))
   }
 
   # --- 3. Pre-filter ---
@@ -455,7 +455,7 @@ RunDimReduction_RNA <- function(obj,
 
   # Get specified data layer
   mat <- obj$assays$RNA[[layer_name]]
-  if(is.null(mat)) stop(paste("Error: Cannot find data layer", layer_name, ", please check if normalization or Scale has been performed!"))
+  if(is.null(mat)) stop(sprintf("Error: Cannot find data layer", layer_name, ", please check if normalization or Scale has been performed!"))
 
   # Algorithm A: PCA
   if (method == "PCA") {
@@ -463,7 +463,8 @@ RunDimReduction_RNA <- function(obj,
     # Extremely fast calculation of HVG
     rM <- Matrix::rowMeans(mat)
     rVar <- Matrix::rowMeans(mat^2) - rM^2
-    hvgs <- names(sort(rVar, decreasing = TRUE))[1:min(n_hvg, length(rVar))]
+    n_selected_hvg <- min(n_hvg, length(rVar))
+    hvgs <- names(sort(rVar, decreasing = TRUE))[seq_len(n_selected_hvg)]
     obj$var.genes <- hvgs
 
     message(sprintf("Running truncated SVD (PCA) using %d feature genes...", length(hvgs)))
@@ -472,10 +473,10 @@ RunDimReduction_RNA <- function(obj,
 
     pca_coords <- pca_res$x
     rownames(pca_coords) <- colnames(mat)
-    colnames(pca_coords) <- paste0("PC_", 1:ncol(pca_coords))
+    colnames(pca_coords) <- paste0("PC_", seq_len(ncol(pca_coords)))
 
     obj$reductions$pca <- pca_coords
-    obj$reductions$current_plot <- pca_coords[, 1:2]
+    obj$reductions$current_plot <- pca_coords[, seq_len(2L), drop = FALSE]
     colnames(obj$reductions$current_plot) <- c("Dim1", "Dim2")
     obj$reductions$current_method <- "PCA"
     message("PCA complete!")
@@ -607,7 +608,7 @@ RunClustering_RNA <- function(obj,
     if (k_n < 1) stop("Sample size is too small to construct a K-NN graph!")
 
     knn_res <- FNN::get.knn(cluster_input, k = k_n)
-    edges <- do.call(rbind, lapply(1:nrow(cluster_input), function(i) {
+    edges <- do.call(rbind, lapply(seq_len(nrow(cluster_input)), function(i) {
       cbind(rep(i, k_n), knn_res$nn.index[i, ])
     }))
 
@@ -903,7 +904,7 @@ RunPseudotime_RNA <- function(obj,
   valid_cells <- intersect(rownames(meta), rownames(raw_coords))
   if (length(valid_cells) == 0) stop(" Sample names in filter_meta.data and dimensionality reduction coordinates do not match at all!")
 
-  coords <- raw_coords[valid_cells, 1:2, drop = FALSE] # Force restriction to 2D space for pseudotime
+  coords <- raw_coords[valid_cells, seq_len(2L), drop = FALSE] # Force restriction to 2D space for pseudotime
   start_cells <- intersect(start_cells, valid_cells)   # Ensure root cells are valid
 
   # --- 4. Core algorithm branching ---
@@ -932,7 +933,7 @@ RunPseudotime_RNA <- function(obj,
 
     k_neighbors <- min(15, nrow(coords) - 1)
     knn_res <- FNN::get.knn(coords, k = k_neighbors)
-    edges <- do.call(rbind, lapply(1:nrow(coords), function(i) {
+    edges <- do.call(rbind, lapply(seq_len(nrow(coords)), function(i) {
       cbind(rep(i, k_neighbors), knn_res$nn.index[i, ])
     }))
 
